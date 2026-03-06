@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Usuario - Localiar</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+.user-post-item { 
+    display: flex; 
+    flex-direction: column; 
+    margin-bottom: 20px; 
+    padding: 10px; 
+    border:1px solid #ddd; 
+    border-radius:8px; 
+    background-color:#fff;
+}
+.user-post-item img { width:80px;height:60px;object-fit:cover;margin-bottom:5px;border-radius:6px; }
+.mini-calendar { width:100%; border-collapse: collapse; margin-top:10px; }
+.mini-calendar th, .mini-calendar td { width:14.28%; text-align:center; padding:2px; font-size:0.8em; border-radius:4px; }
+.mini-calendar td.disponible { background-color: #28a745; color: #fff; }
+.mini-calendar td.reservado { background-color: #3483fa; color: #fff; }
+.mini-calendar th { font-weight:600; font-size:0.75em; }
+.mini-calendar-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; font-size:0.9em; }
+.mini-calendar-header button { background-color:#3483fa; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.8em; }
+
+.user-columns {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+}
+.user-column {
+    flex: 1;
+}
+.user-column h3 { margin-bottom: 10px; }
+
+/* Nuevo estilo para el botón de usuario activo en header */
+.header .user-active-btn {
+    background-color: #fff;
+    color: #3483fa;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: default;
+    font-weight: 600;
+    margin-left: auto; /* empuja a la derecha */
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo" style="cursor:pointer;" onclick="window.location.href='index.html'">Localiar</div>
+  <!-- Botón de usuario activo agregado -->
+  <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+  <div id="header-user-rating"></div>
+  <button class="user-active-btn" id="header-user-btn"></button>
+</div>
+</header>
+
+<main class="publish-main">
+  <h2>Panel de Usuario</h2>
+
+  <div class="user-columns">
+    <div class="user-column">
+      <h3><i class="fas fa-heart"></i> Favoritos</h3>
+      <div id="user-favoritos-list"></div>
+    </div>
+
+    <div class="user-column">
+      <h3><i class="fas fa-calendar-check"></i> Mis Reservas</h3>
+      <div id="user-reservas-list"></div>
+    </div>
+
+    <div class="user-column">
+  <h3><i class="fas fa-store"></i> Publicaciones Activas</h3>
+  <div id="user-posts-list"></div>
+</div>
+
+
+
+<div class="user-column">
+  <h3><i class="fas fa-star"></i> Valoraciones</h3>
+  <div id="user-valoraciones-list"></div>
+</div>
+</div>
+<!-- NOTIFICACIONES debajo de las columnas -->
+<div style="margin-top:40px;">
+  <h3><i class="fas fa-bell"></i> Notificaciones</h3>
+  <div id="user-notificaciones-list"></div>
+</div>
+</main>
+
+<footer class="footer-banner">
+    <p>Publicidad aquí</p>
+</footer>
+
+<script>
+const usuarioActual = localStorage.getItem('usuario_actual') || 'DemoUsuario';
+const userPostsList = document.getElementById('user-posts-list');
+const userReservasList = document.getElementById('user-reservas-list');
+const userFavoritosList = document.getElementById('user-favoritos-list');
+const userNotificacionesList = document.getElementById('user-notificaciones-list');
+const userValoracionesList = document.getElementById('user-valoraciones-list');
+
+const headerUserBtn = document.getElementById('header-user-btn');
+const headerUserRating = document.getElementById('header-user-rating');
+headerUserBtn.textContent = usuarioActual;
+
+const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+function formatDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth()+1).padStart(2,'0');
+    const d = String(date.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+}
+
+function normalizarReservas(reservas){
+    if(!Array.isArray(reservas)) return [];
+    return reservas.map(r => typeof r === "string" ? {fecha:r, usuario:null} : r);
+}
+
+function crearMiniCalendario(disponibilidad=[], reservas=[], modoReserva=false) {
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+
+    reservas = normalizarReservas(reservas);
+
+    const container = document.createElement('div');
+    container.style.marginTop = "10px";
+
+    const header = document.createElement('div');
+    header.classList.add('mini-calendar-header');
+
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = "<";
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = ">";
+
+    const monthYearSpan = document.createElement('span');
+    monthYearSpan.textContent = `${months[currentMonth]} ${currentYear}`;
+
+    header.appendChild(prevBtn);
+    header.appendChild(monthYearSpan);
+    header.appendChild(nextBtn);
+
+    container.appendChild(header);
+
+    const table = document.createElement('table');
+    table.classList.add('mini-calendar');
+
+    function render() {
+        table.innerHTML = "";
+        const thead = document.createElement('thead');
+        const trHead = document.createElement('tr');
+        ['D','L','M','M','J','V','S'].forEach(dia => {
+            const th = document.createElement('th');
+            th.textContent = dia;
+            trHead.appendChild(th);
+        });
+        thead.appendChild(trHead);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        let date = 1;
+
+        for(let i=0;i<6;i++){
+            const tr = document.createElement('tr');
+            for(let j=0;j<7;j++){
+                const td = document.createElement('td');
+                if(i===0 && j<firstDay){
+                    td.textContent = '';
+                } else if(date>daysInMonth){
+                    td.textContent = '';
+                } else {
+                    const formatted = formatDate(new Date(currentYear, currentMonth, date));
+                    td.textContent = date;
+
+                    if(modoReserva){
+                        if(reservas.some(r => r.fecha === formatted && r.usuario === usuarioActual)){
+                            td.classList.add('reservado');
+                        }
+                    } else {
+                        if(reservas.some(r => r.fecha === formatted)){
+                            td.classList.add('reservado');
+                        } else if(disponibilidad.includes(formatted)){
+                            td.classList.add('disponible');
+                        }
+                    }
+
+                    date++;
+                }
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        monthYearSpan.textContent = `${months[currentMonth]} ${currentYear}`;
+    }
+
+    prevBtn.addEventListener('click', ()=>{ 
+        currentMonth--; 
+        if(currentMonth<0){ currentMonth=11; currentYear--; } 
+        render(); 
+    });
+    nextBtn.addEventListener('click', ()=>{ 
+        currentMonth++; 
+        if(currentMonth>11){ currentMonth=0; currentYear++; } 
+        render(); 
+    });
+
+    render();
+    container.appendChild(table);
+    return container;
+}
+function calcularPromedioInquilino() {
+    const posts = JSON.parse(localStorage.getItem('localiar_posts') || '[]');
+    let valoraciones = [];
+
+    posts.forEach(post => {
+        if(!post.reservas) return;
+
+        post.reservas.forEach(r => {
+            if(r.usuario === usuarioActual && r.valoracionPropietario){
+                
+                valoraciones.push(r.valoracionPropietario);
+            }
+        });
+    });
+
+    // Tomar solo las últimas 10
+    valoraciones = valoraciones.slice(-10);
+
+    if(valoraciones.length === 0){
+        return 5; // todos empiezan con 5
+    }
+
+    const suma = valoraciones.reduce((acc, val) => acc + val, 0);
+    return (suma / valoraciones.length);
+}
+function calcularPromedioUsuario(usuario) {
+    const posts = JSON.parse(localStorage.getItem('localiar_posts') || '[]');
+    let valoraciones = [];
+
+    posts.forEach(post => {
+        if(!post.reservas) return;
+
+        post.reservas.forEach(r => {
+            if(r.usuario === usuario && r.valoracionPropietario){
+                valoraciones.push(r.valoracionPropietario);
+            }
+        });
+    });
+
+    // Tomar últimas 10
+    valoraciones = valoraciones.slice(-10);
+
+    if(valoraciones.length === 0){
+        return 5; // todos empiezan con 5
+    }
+
+    const suma = valoraciones.reduce((acc, val) => acc + val, 0);
+    return suma / valoraciones.length;
+}
+function renderizarEstrellasHeader() {
+    const promedio = calcularPromedioInquilino();
+    const redondeado = Math.round(promedio);
+
+    headerUserRating.innerHTML = "";
+
+    for(let i = 1; i <= 5; i++){
+        const star = document.createElement("span");
+        star.textContent = "★";
+        star.style.color = i <= redondeado ? "#007bff" : "#ccc";
+        star.style.fontSize = "18px";
+star.style.marginRight = "2px";
+        headerUserRating.appendChild(star);
+    }
+}
+function cargarPublicacionesUsuario() {
+    const posts = JSON.parse(localStorage.getItem('localiar_posts') || '[]');
+    userPostsList.innerHTML = "";
+    userReservasList.innerHTML = "";
+    userFavoritosList.innerHTML = "";
+    userNotificacionesList.innerHTML = "";
+    const notificacionesKey = `notificaciones_${usuarioActual}`;
+    const notificaciones = JSON.parse(localStorage.getItem(notificacionesKey) || "[]");
+
+if(notificaciones.length === 0){
+    userNotificacionesList.innerHTML = "<p>No hay notificaciones.</p>";
+} else {
+    notificaciones.forEach((n, idx) => {
+        const div = document.createElement('div');
+        div.classList.add('user-post-item');
+        div.innerHTML = `<p>${n.texto} <span class="timestamp">${new Date(n.fecha).toLocaleString()}</span></p>`;
+
+        const btnEliminar = document.createElement('button');
+        btnEliminar.textContent = "Eliminar";
+        btnEliminar.style.marginTop = "5px";
+        btnEliminar.style.padding = "4px 8px";
+        btnEliminar.style.border = "none";
+        btnEliminar.style.borderRadius = "4px";
+        btnEliminar.style.backgroundColor = "#dc3545";
+        btnEliminar.style.color = "#fff";
+        btnEliminar.style.cursor = "pointer";
+
+        btnEliminar.addEventListener("click", (e) => {
+            e.stopPropagation();
+            div.remove();
+            notificaciones.splice(idx, 1);
+            localStorage.setItem(notificacionesKey, JSON.stringify(notificaciones));
+        });
+
+        div.appendChild(btnEliminar);
+        userNotificacionesList.appendChild(div);
+    });
+}
+
+// PUBLICACIONES ACTIVAS
+posts.forEach((post, index) => {
+    if(post.usuario === usuarioActual){
+        const div = document.createElement('div');
+        div.classList.add('user-post-item');
+        div.innerHTML = `<img src="${post.images[0]}" alt="${post.title}"><strong>${post.title}</strong> - $${post.precio} por día`;
+
+        div.style.cursor = "pointer";
+        div.addEventListener("click", () => {
+            window.location.href = `publicacion.html?id=${index}`;
+        });
+
+        const miniCalendar = crearMiniCalendario(post.disponibilidad || [], post.reservas || []);
+        div.appendChild(miniCalendar);
+        userPostsList.appendChild(div);
+    }
+});
+
+if(userPostsList.innerHTML === "") {
+    userPostsList.innerHTML = "<p>No hay publicaciones activas.</p>";
+}
+
+// MIS RESERVAS
+posts.forEach((post, index) => {
+    const reservas = normalizarReservas(post.reservas);
+    const reservasUsuario = reservas.filter(r => r.usuario === usuarioActual);
+    if(reservasUsuario.length > 0){
+        const div = document.createElement('div');
+        div.classList.add('user-post-item');
+        div.innerHTML = `<img src="${post.images[0]}" alt="${post.title}"><strong>${post.title}</strong> - $${post.precio} por día`;
+// 🔵 Mostrar estado de cada reserva del usuario
+reservasUsuario.forEach((r) => {
+
+const reservaIndex = post.reservas.findIndex(res =>
+    res.usuario === r.usuario &&
+    (res.fecha === r.fecha || JSON.stringify(res.fechas) === JSON.stringify(r.fechas))
+);
+
+    if(r.estado === "pendiente"){
+
+        const estadoDiv = document.createElement('div');
+        estadoDiv.style.backgroundColor = "#cce5ff";
+        estadoDiv.style.color = "#004085";
+        estadoDiv.style.padding = "6px";
+        estadoDiv.style.borderRadius = "6px";
+        estadoDiv.style.marginTop = "6px";
+
+        estadoDiv.innerHTML = `
+            ⏳ Tu reserva está pendiente de aprobación por ${post.usuario}.
+        `;
+
+        div.appendChild(estadoDiv);
+    }
+
+    if(r.estado === "aceptada"){
+
+        const estadoDiv = document.createElement('div');
+        estadoDiv.style.backgroundColor = "#d4edda";
+        estadoDiv.style.color = "#155724";
+        estadoDiv.style.padding = "6px";
+        estadoDiv.style.borderRadius = "6px";
+        estadoDiv.style.marginTop = "6px";
+
+        estadoDiv.innerHTML = `
+            ✅ Tu reserva fue aprobada.
+        `;
+
+        div.appendChild(estadoDiv);
+    }
+
+    if(r.estado === "rechazada"){
+
+        const estadoDiv = document.createElement('div');
+        estadoDiv.style.backgroundColor = "#f8d7da";
+        estadoDiv.style.color = "#721c24";
+        estadoDiv.style.padding = "6px";
+        estadoDiv.style.borderRadius = "6px";
+        estadoDiv.style.marginTop = "6px";
+
+        estadoDiv.innerHTML = `
+            ❌ Tu reserva fue rechazada.
+        `;
+
+        div.appendChild(estadoDiv);
+    }
+    // 🔴 Botón cancelar reserva (solo si faltan más de 72hs)
+if(r.estado === "aceptada"){
+
+    const fechasOrdenadas = (r.fechas || [r.fecha]).sort();
+    const fechaInicio = new Date(fechasOrdenadas[0]);
+    const ahora = new Date();
+
+    const diferenciaHoras = (fechaInicio - ahora) / (1000 * 60 * 60);
+
+    if(diferenciaHoras > 72){
+
+        const btnCancelar = document.createElement("button");
+        btnCancelar.textContent = "Cancelar reserva";
+        btnCancelar.style.marginTop = "6px";
+        btnCancelar.style.padding = "5px 10px";
+        btnCancelar.style.backgroundColor = "#dc3545";
+        btnCancelar.style.color = "#fff";
+        btnCancelar.style.border = "none";
+        btnCancelar.style.borderRadius = "4px";
+        btnCancelar.style.cursor = "pointer";
+
+       btnCancelar.addEventListener("click", (e) => {
+
+    e.stopPropagation();
+
+    if(!confirm("¿Seguro que quieres cancelar esta reserva?")){
+        return;
+    }
+
+    if(!post.disponibilidad){
+        post.disponibilidad = [];
+    }
+
+    const fechasCanceladas = (r.fechas || [r.fecha]);
+
+    fechasCanceladas.forEach(f => {
+        if(!post.disponibilidad.includes(f)){
+            post.disponibilidad.push(f);
+        }
+    });
+
+    post.disponibilidad.sort();
+
+    const reservaIndex = post.reservas.findIndex(res =>
+        res.usuario === r.usuario &&
+        JSON.stringify(res.fechas || [res.fecha]) === JSON.stringify(fechasCanceladas)
+    );
+
+    if(reservaIndex !== -1){
+        post.reservas.splice(reservaIndex, 1);
+    }
+
+    localStorage.setItem('localiar_posts', JSON.stringify(posts));
+
+    cargarPublicacionesUsuario();
+
+
+
+});
+
+        div.appendChild(btnCancelar);
+
+    }
+}
+
+});
+        div.style.cursor = "pointer";
+        div.addEventListener("click", () => {
+            window.location.href = `publicacion.html?id=${index}`;
+        });
+
+        const miniCalendar = crearMiniCalendario([], reservasUsuario, true);
+        div.appendChild(miniCalendar);
+        userReservasList.appendChild(div);
+    }
+});
+
+// FAVORITOS
+const favoritosKey = `favoritos_${usuarioActual}`;
+const favoritos = JSON.parse(localStorage.getItem(favoritosKey) || '[]');
+if(favoritos.length===0) userFavoritosList.innerHTML = "<p>No hay favoritos.</p>";
+
+favoritos.forEach(idx => {
+    const post = posts[idx];
+    if(!post) return;
+    const div = document.createElement('div');
+    div.classList.add('user-post-item');
+    div.innerHTML = `<img src="${post.images[0]}" alt="${post.title}"><strong>${post.title}</strong> - $${post.precio} por día`;
+
+    div.style.cursor = "pointer";
+    div.addEventListener("click", () => {
+        window.location.href = `publicacion.html?id=${idx}`;
+    });
+
+    const miniCalendar = crearMiniCalendario(post.disponibilidad || [], []);
+    div.appendChild(miniCalendar);
+    userFavoritosList.appendChild(div);
+});
+
+// 🔔 Notificaciones de preguntas y respuestas
+posts.forEach((post, index) => {
+    if(!post.preguntas) return;
+    post.preguntas.forEach(p => {
+        if(post.usuario === usuarioActual && p.usuario !== usuarioActual){
+            const div = document.createElement('div');
+            div.classList.add('user-post-item');
+            div.innerHTML = `<strong>Nueva pregunta</strong><br>En: ${post.title}<br>"${p.texto}"`;
+
+            div.style.cursor = "pointer";
+            div.addEventListener("click", () => {
+                window.location.href = `publicacion.html?id=${index}`;
+            });
+
+            const btnEliminar = document.createElement('button');
+            btnEliminar.textContent = "Eliminar";
+            btnEliminar.style.marginTop = "5px";
+            btnEliminar.style.padding = "4px 8px";
+            btnEliminar.style.border = "none";
+            btnEliminar.style.borderRadius = "4px";
+            btnEliminar.style.backgroundColor = "#dc3545";
+            btnEliminar.style.color = "#fff";
+            btnEliminar.style.cursor = "pointer";
+
+            btnEliminar.addEventListener("click", (e) => {
+                e.stopPropagation();
+                div.remove();
+            });
+
+            div.appendChild(btnEliminar);
+            userNotificacionesList.appendChild(div);
+        }
+
+        if(p.usuario === usuarioActual && p.respondida){
+            const div = document.createElement('div');
+            div.classList.add('user-post-item');
+            div.innerHTML = `<strong>Respondieron tu pregunta</strong><br>En: ${post.title}<br>"${p.respuesta}"`;
+
+            div.style.cursor = "pointer";
+            div.addEventListener("click", () => {
+                window.location.href = `publicacion.html?id=${index}`;
+            });
+
+            const btnEliminar = document.createElement('button');
+            btnEliminar.textContent = "Eliminar";
+            btnEliminar.style.marginTop = "5px";
+            btnEliminar.style.padding = "4px 8px";
+            btnEliminar.style.border = "none";
+            btnEliminar.style.borderRadius = "4px";
+            btnEliminar.style.backgroundColor = "#dc3545";
+            btnEliminar.style.color = "#fff";
+            btnEliminar.style.cursor = "pointer";
+
+            btnEliminar.addEventListener("click", (e) => {
+                e.stopPropagation();
+                div.remove();
+            });
+
+            div.appendChild(btnEliminar);
+            userNotificacionesList.appendChild(div);
+        }
+    });
+});
+
+// 🔔 Notificaciones de reservas para el propietario (con aceptar / rechazar)
+posts.forEach((post, index) => {
+
+    if(post.usuario !== usuarioActual) return;
+    if(!post.reservas) return;
+
+    post.reservas.forEach((r, reservaIndex) => {
+
+        if(r.estado !== "pendiente") return;
+
+        const div = document.createElement('div');
+        div.classList.add('user-post-item');
+
+        const promedioInquilino = calcularPromedioUsuario(r.usuario);
+        const redondeado = Math.round(promedioInquilino);
+
+        let estrellasHTML = "";
+        for(let i=1; i<=5; i++){
+            estrellasHTML += `<span style="color:${i<=redondeado ? '#ffc107' : '#ccc'}; font-size:18px;">★</span>`;
+        }
+
+        div.innerHTML = `
+            <strong>Nueva solicitud de reserva</strong><br>
+            Inquilino: ${r.usuario}<br>
+            <div style="display:flex; gap:2px; margin:4px 0;">
+                ${estrellasHTML}
+            </div>
+            Local: ${post.title}<br>
+            Fechas: ${r.fechas.join(', ')}<br>
+            Monto a recibir: $${r.montoPropietario.toFixed(2)}
+        `;
+
+        const btnAceptar = document.createElement("button");
+        btnAceptar.textContent = "Aceptar";
+        btnAceptar.style.marginTop = "8px";
+        btnAceptar.style.marginRight = "5px";
+        btnAceptar.style.padding = "5px 10px";
+        btnAceptar.style.backgroundColor = "#28a745";
+        btnAceptar.style.color = "#fff";
+        btnAceptar.style.border = "none";
+        btnAceptar.style.borderRadius = "4px";
+        btnAceptar.style.cursor = "pointer";
+
+        const btnRechazar = document.createElement("button");
+        btnRechazar.textContent = "Rechazar";
+        btnRechazar.style.marginTop = "8px";
+        btnRechazar.style.padding = "5px 10px";
+        btnRechazar.style.backgroundColor = "#dc3545";
+        btnRechazar.style.color = "#fff";
+        btnRechazar.style.border = "none";
+        btnRechazar.style.borderRadius = "4px";
+        btnRechazar.style.cursor = "pointer";
+
+        btnAceptar.addEventListener("click", () => {
+
+    r.estado = "aceptada";
+    // 📅 Calcular fecha de cobro (día siguiente al último día reservado)
+const fechasOrdenadas = [...r.fechas].sort();
+const ultimaFecha = new Date(fechasOrdenadas[fechasOrdenadas.length - 1]);
+
+ultimaFecha.setDate(ultimaFecha.getDate() + 1);
+
+const fechaCobro = ultimaFecha.toISOString().split("T")[0];
+
+// Guardamos fecha de cobro en la reserva
+r.fechaCobro = fechaCobro;
+
+    // 🔒 Eliminar los días reservados de la disponibilidad
+    if(post.disponibilidad && r.fechas){
+        post.disponibilidad = post.disponibilidad.filter(fecha => 
+            !r.fechas.includes(fecha)
+        );
+    }
+
+    // Crear notificación para el inquilino
+    if(!post.notificacionesInquilino) post.notificacionesInquilino = [];
+
+    post.notificacionesInquilino.push({
+        usuarioDestino: r.usuario,
+        mensaje: `Tu reserva para "${post.title}" fue APROBADA`,
+        fechas: r.fechas,
+        monto: r.monto,
+        fecha: new Date().toISOString()
+    });
+// Crear notificación para el propietario sobre el cobro
+if(!post.notificacionesPropietario) post.notificacionesPropietario = [];
+
+post.notificacionesPropietario.push({
+    mensaje: `Cobro de $${r.montoPropietario.toFixed(2)} programado para ${fechaCobro}`,
+    fechas: r.fechas,
+    monto: r.montoPropietario,
+    fechaCobro: fechaCobro
+});
+    
+    
+
+    localStorage.setItem('localiar_posts', JSON.stringify(posts));
+    cargarPublicacionesUsuario();
+});
+
+        btnRechazar.addEventListener("click", () => {
+
+    r.estado = "rechazada";
+
+    // Crear notificación para el inquilino
+    if(!post.notificacionesInquilino) post.notificacionesInquilino = [];
+
+    post.notificacionesInquilino.push({
+        usuarioDestino: r.usuario,
+        mensaje: `Tu reserva para "${post.title}" fue RECHAZADA`,
+        fechas: r.fechas,
+        monto: r.monto,
+        fecha: new Date().toISOString()
+    });
+
+    localStorage.setItem('localiar_posts', JSON.stringify(posts));
+    cargarPublicacionesUsuario();
+});
+
+        div.appendChild(btnAceptar);
+        div.appendChild(btnRechazar);
+
+        userNotificacionesList.appendChild(div);
+
+    });
+    // Mostrar notificaciones de cobro para el propietario
+if(post.notificacionesPropietario){
+    post.notificacionesPropietario.forEach(n => {
+        const divProp = document.createElement('div');
+        divProp.classList.add('user-post-item');
+        divProp.style.backgroundColor = "#fff3cd"; // color amarillo suave
+        divProp.innerHTML = `
+            <strong>📅 Aviso de cobro</strong><br>
+            Local: "${post.title}"<br>
+            Monto: $${n.monto.toFixed(2)}<br>
+            Fecha programada: ${n.fechaCobro}
+        `;
+        userNotificacionesList.appendChild(divProp);
+    });
+}
+// 🔴 Cancelación por parte del propietario (si la reserva ya está aceptada)
+
+
+});
+// 🔔 Notificaciones para el inquilino (aprobadas o rechazadas)
+posts.forEach((post, index) => {
+
+    if(!post.notificacionesInquilino) return;
+
+    post.notificacionesInquilino.forEach((n, notifIndex) => {
+
+        if(n.usuarioDestino !== usuarioActual) return;
+
+        const div = document.createElement('div');
+        div.classList.add('user-post-item');
+
+        const colorEstado = n.mensaje.includes("APROBADA") ? "#28a745" : "#dc3545";
+
+        div.innerHTML = `
+            <strong style="color:${colorEstado};">${n.mensaje}</strong><br>
+            Local: ${post.title}<br>
+            Fechas: ${n.fechas.join(', ')}<br>
+            Monto: $${n.monto}
+        `;
+
+        const btnEliminar = document.createElement("button");
+        btnEliminar.textContent = "Eliminar";
+        btnEliminar.style.marginTop = "5px";
+        btnEliminar.style.padding = "4px 8px";
+        btnEliminar.style.border = "none";
+        btnEliminar.style.borderRadius = "4px";
+        btnEliminar.style.backgroundColor = "#6c757d";
+        btnEliminar.style.color = "#fff";
+        btnEliminar.style.cursor = "pointer";
+
+        btnEliminar.addEventListener("click", () => {
+            post.notificacionesInquilino.splice(notifIndex, 1);
+            localStorage.setItem('localiar_posts', JSON.stringify(posts));
+            cargarPublicacionesUsuario();
+        });
+
+        div.appendChild(btnEliminar);
+        userNotificacionesList.appendChild(div);
+
+    });
+
+});
+if(userNotificacionesList.innerHTML === ""){
+    userNotificacionesList.innerHTML = "<p>No hay notificaciones.</p>";
+}
+
+// Valoraciones pendientes
+// Finalización de contratos para que el propietario valore al usuario
+userValoracionesList.innerHTML = "";
+posts.forEach((post, index) => {
+    if(post.reservas && post.usuario === usuarioActual){
+  post.reservas.forEach((r)=>{
+      if(r.valoradaPorPropietario && r.comentarioPropietario){
+          const div = document.createElement('div');
+          div.classList.add('user-post-item');
+          div.innerHTML = `
+              <strong>Valoración de ${r.usuario}</strong><br>
+              Local: "${post.title}"<br>
+              "${r.comentarioPropietario}"<br>
+              Estrellas: ${"★".repeat(r.valoracionPropietario)}
+          `;
+
+                // Estilo opcional para diferenciarlo de preguntas normales
+                div.style.backgroundColor = "#fff8e1";
+                div.style.borderLeft = "4px solid #ffc107";
+                
+                // Al hacer click puedes ir a la publicación
+                div.style.cursor = "pointer";
+                div.addEventListener("click", () => {
+                    window.location.href = `publicacion.html?id=${index}`;
+                });
+
+                userValoracionesList.appendChild(div);
+            }
+        });
+    }
+});
+
+posts.forEach((post, index) => {
+
+    // Solo publicaciones del propietario
+    if(post.usuario !== usuarioActual) return;
+
+    if(!post.reservas || post.reservas.length === 0) return;
+
+    post.reservas.forEach((r, reservaIndex) => {
+
+        const fechasOrdenadas = (r.fechas || [r.fecha]).sort();
+const fechaReserva = new Date(fechasOrdenadas[fechasOrdenadas.length - 1]);
+        const hoy = new Date();
+
+        fechaReserva.setHours(0,0,0,0);
+        hoy.setHours(0,0,0,0);
+
+        // Si la fecha ya pasó → contrato terminado
+       if(fechaReserva < hoy && r.estado === "aceptada" && !r.valoradaPorPropietario){
+
+            const div = document.createElement('div');
+            div.classList.add('user-post-item');
+
+            div.innerHTML = `
+                <strong>${r.usuario}</strong> terminó de usar tu local<br>
+                Local: "${post.title}"<br>
+                Fecha de finalización: ${r.fecha}
+            `;
+
+            div.style.cursor = "pointer";
+
+            div.addEventListener("click", () => {
+    valoracionContext = { postIndex: index, reservaIndex: reservaIndex };
+    valorSeleccionado = 0;
+    valoracionStars.forEach(s => s.style.color = "gray");
+    document.getElementById('valoracion-comentario').value = ""; // limpia comentario anterior
+    valoracionModal.style.display = "flex";
+});
+
+            userValoracionesList.appendChild(div);
+        }
+
+    });
+}
+);
+// Finalización de contratos para que el INQUILINO valore el local
+posts.forEach((post, index) => {
+
+    if(!post.reservas) return;
+
+    post.reservas.forEach((r, reservaIndex) => {
+
+        if(r.usuario !== usuarioActual) return;
+
+        const fechasOrdenadas = (r.fechas || [r.fecha]).sort();
+        const fechaReserva = new Date(fechasOrdenadas[fechasOrdenadas.length - 1]);
+        const hoy = new Date();
+
+        fechaReserva.setHours(0,0,0,0);
+        hoy.setHours(0,0,0,0);
+
+        // Si la fecha ya pasó y el inquilino aún no valoró
+        if(fechaReserva < hoy && r.estado === "aceptada" && !r.valoradaPorInquilino){
+
+            const div = document.createElement('div');
+            div.classList.add('user-post-item');
+
+            div.innerHTML = `
+                Terminaste de alquilar el local<br>
+                Local: "${post.title}"<br>
+                Fecha: ${fechasOrdenadas[fechasOrdenadas.length - 1]}<br>
+                <strong>Haz click para valorar el local</strong>
+            `;
+
+            div.style.cursor = "pointer";
+
+            div.addEventListener("click", () => {
+
+                valoracionContext = { 
+                    postIndex: index, 
+                    reservaIndex: reservaIndex,
+                    tipo: "inquilino"
+                };
+
+                valorSeleccionado = 0;
+                valoracionStars.forEach(s => s.style.color = "gray");
+                document.getElementById('valoracion-comentario').value = "";
+
+                valoracionModal.style.display = "flex";
+
+            });
+
+            userValoracionesList.appendChild(div);
+        }
+
+    });
+
+});
+
+if(userValoracionesList.innerHTML === ""){
+    userValoracionesList.innerHTML = "<p>No hay contratos finalizados.</p>";
+}
+
+}
+
+cargarPublicacionesUsuario();
+
+
+
+</script>
+
+<!-- Modal de Valoración -->
+<div id="valoracion-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background-color:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:20px; border-radius:10px; max-width:400px; width:90%;">
+    <h3 id="valoracion-modal-title">Valorar Experiencia</h3>
+    <p>Selecciona una puntuación del 1 al 10:</p>
+    <div class="stars" id="valoracion-stars">
+    <span data-value="1">★</span>
+    <span data-value="2">★</span>
+    <span data-value="3">★</span>
+    <span data-value="4">★</span>
+    <span data-value="5">★</span>
+</div>
+<textarea id="valoracion-comentario" placeholder="Escribe tu comentario aquí..." 
+    style="width:100%; height:60px; margin-top:5px; padding:5px; border-radius:5px; border:1px solid #ccc;"></textarea>
+    <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
+      <button id="valoracion-cancel" style="padding:5px 10px;">Cancelar</button>
+      <button id="valoracion-submit" style="padding:5px 10px; background:#28a745; color:#fff; border:none; border-radius:4px;">Enviar</button>
+    </div>
+  </div>
+</div>
+<script>
+valoracionModal = document.getElementById('valoracion-modal');
+valoracionSubmit = document.getElementById('valoracion-submit');
+valoracionCancel = document.getElementById('valoracion-cancel');
+valoracionModalTitle = document.getElementById('valoracion-modal-title');
+
+const valoracionStars = document.querySelectorAll("#valoracion-stars span");
+let valorSeleccionado = 0;
+let valoracionContext = null;
+valoracionStars.forEach(star => {
+    star.addEventListener("click", () => {
+
+        valorSeleccionado = parseInt(star.dataset.value);
+
+        valoracionStars.forEach(s => {
+            s.style.color =
+                parseInt(s.dataset.value) <= valorSeleccionado
+                ? "gold"
+                : "gray";
+        });
+    });
+});
+valoracionCancel.addEventListener("click", () => {
+    valoracionModal.style.display = "none";
+});
+valoracionSubmit.addEventListener("click", () => {
+
+    const valor = valorSeleccionado;
+
+    if(valorSeleccionado === 0){
+    alert("Debes seleccionar una cantidad de estrellas");
+    return;
+}
+const comentario = document.getElementById('valoracion-comentario').value.trim();
+
+
+
+if(comentario === ""){
+    alert("Debes escribir un comentario sobre el lugar");
+    return;
+}
+
+    if(!valoracionContext){
+        alert("Error de contexto");
+        return;
+    }
+
+    const posts = JSON.parse(localStorage.getItem("localiar_posts") || "[]");
+
+    const post = posts[valoracionContext.postIndex];
+
+    if(!post || !post.reservas){
+        alert("No se encontró la reserva");
+        return;
+    }
+
+    const reserva = post.reservas[valoracionContext.reservaIndex];
+    if(valoracionContext.tipo === "inquilino" && reserva.valoradaPorInquilino){
+    alert("Esta reserva ya fue valorada.");
+    valoracionModal.style.display = "none";
+    return;
+}
+
+if(!reserva){
+    alert("No se encontró la reserva");
+    return;
+}
+
+    if(!reserva){
+        alert("No se encontró la reserva pendiente");
+        return;
+    }
+
+    if(valoracionContext.tipo === "inquilino"){
+
+    reserva.valoracionInquilino = valor;
+    reserva.comentarioInquilino = comentario;
+    reserva.valoradaPorInquilino = true;
+
+    // 🔹 Guardar comentario para mostrar en la publicación
+    if(!post.valoracionesComentarios){
+        post.valoracionesComentarios = [];
+    }
+
+    post.valoracionesComentarios.push({
+        usuario: usuarioActual,
+        texto: comentario,
+        valoracion: valor,
+        fecha: new Date().toISOString()
+    });
+
+}else{
+
+    reserva.valoracionPropietario = valor;
+    reserva.comentarioPropietario = comentario;
+    reserva.valoradaPorPropietario = true;
+
+}
+
+    localStorage.setItem("localiar_posts", JSON.stringify(posts));
+
+    valoracionModal.style.display = "none";
+    valoracionContext = null;
+    cargarPublicacionesUsuario();
+
+
+   
+
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    cargarPublicacionesUsuario();    // Carga todo el contenido de usuario
+    renderizarEstrellasHeader();      // Dibuja las estrellas en el zócalo
+});
+</script>
+
+</body>
+</html>

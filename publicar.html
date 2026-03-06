@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Publicar Local - Localiar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Localiar</a></div>
+  
+  <div class="user-actions">
+    <button class="user-btn" id="user-active-btn"></button>
+  </div>
+</header>
+
+<main class="publish-main">
+  <h2>Publicar un Local</h2>
+
+  <div class="publish-field">
+    <label for="title">Título del local:</label>
+    <input type="text" id="title" placeholder="Ej: Local en Palermo para gimnasio">
+  </div>
+
+  <div class="publish-field">
+    <label>Fotos (hasta 4):</label>
+    <input type="file" id="images" accept="image/jpeg, image/png" multiple>
+    <div id="preview-container" class="preview-container"></div>
+  </div>
+
+  <div class="publish-field">
+    <label for="rubro">Rubro:</label>
+    <select id="rubro">
+      <option value="gimnasio">Gimnasio</option>
+      <option value="peluqueria">Peluquería</option>
+      <option value="taller">Taller</option>
+      <option value="local-vacio">Local vacío</option>
+      <option value="gastronomia">Gastronomía</option>
+      <option value="indumentaria">Indumentaria</option>
+      <option value="feria americana">feria americana</option>
+      <option value="foodtruck">foodtruck</option>
+      <option value="fabrica">fabrica</option>
+    </select>
+  </div>
+
+  <div class="publish-field">
+    <label for="provincia">Provincia:</label>
+    <select id="provincia">
+      <option value="Buenos Aires">Buenos Aires</option>
+      <option value="Catamarca">Catamarca</option>
+      <option value="Chaco">Chaco</option>
+      <option value="Chubut">Chubut</option>
+      <option value="Córdoba">Córdoba</option>
+      <option value="Corrientes">Corrientes</option>
+      <option value="Entre Ríos">Entre Ríos</option>
+      <option value="Formosa">Formosa</option>
+      <option value="Jujuy">Jujuy</option>
+      <option value="La Pampa">La Pampa</option>
+      <option value="La Rioja">La Rioja</option>
+      <option value="Mendoza">Mendoza</option>
+      <option value="Misiones">Misiones</option>
+      <option value="Neuquén">Neuquén</option>
+      <option value="Río Negro">Río Negro</option>
+      <option value="Salta">Salta</option>
+      <option value="San Juan">San Juan</option>
+      <option value="San Luis">San Luis</option>
+      <option value="Santa Cruz">Santa Cruz</option>
+      <option value="Santa Fe">Santa Fe</option>
+      <option value="Santiago del Estero">Santiago del Estero</option>
+      <option value="Tierra del Fuego">Tierra del Fuego</option>
+      <option value="Tucumán">Tucumán</option>
+      <option value="Ciudad Autónoma de Buenos Aires">Ciudad Autónoma de Buenos Aires</option>
+    </select>
+  </div>
+
+  <div class="publish-field">
+    <label for="ciudad">Ciudad / Barrio:</label>
+    <input type="text" id="ciudad" placeholder="Ej: Palermo, Recoleta, Microcentro">
+  </div>
+
+  <div class="publish-field">
+    <label for="direccion">Dirección:</label>
+    <input type="text" id="direccion">
+  </div>
+
+  <div class="publish-field">
+    <label for="telefono">Teléfono de contacto:</label>
+    <input type="text" id="telefono">
+  </div>
+
+  <div class="publish-field">
+    <label for="descripcion">Descripción breve:</label>
+    <textarea id="descripcion" rows="3" placeholder="Describe brevemente el local"></textarea>
+  </div>
+
+  <div class="publish-field">
+    <label for="precio">Precio por día:</label>
+    <input type="number" id="precio" min="0">
+    <p id="precio-info"></p>
+  </div>
+
+  <!-- 🔹 HORARIO OPCIONAL -->
+  <div class="publish-field">
+    <label>Horario disponible (opcional)</label>
+    <div class="horario-container" style="margin-top:10px;">
+      <div class="slider-wrapper" style="position:relative; margin-top:15px; height:20px;">
+        <div style="position:absolute; width:100%; height:6px; background:#ddd; border-radius:5px; top:7px;"></div>
+        <div id="slider-range" style="position:absolute; height:6px; background:#3483fa; border-radius:5px; top:7px;"></div>
+
+        <input type="range" id="range-desde" min="0" max="24" value="0"
+          style="position:absolute; width:100%; pointer-events:none; appearance:none; height:0;">
+        <input type="range" id="range-hasta" min="0" max="24" value="24"
+          style="position:absolute; width:100%; pointer-events:none; appearance:none; height:0;">
+      </div>
+      <div style="margin-top:5px; font-weight:bold;">
+        <span id="horario-preview"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDARIO OPCIONAL -->
+  <div class="publish-field">
+    <h3>Selecciona los días de disponibilidad (opcional)</h3>
+    <div class="calendar-container">
+      <div class="calendar-header">
+        <button id="prev-month">&lt;</button>
+        <span id="month-year"></span>
+        <button id="next-month">&gt;</button>
+      </div>
+      <table class="calendar">
+        <thead>
+          <tr>
+            <th>D</th><th>L</th><th>M</th><th>M</th><th>J</th><th>V</th><th>S</th>
+          </tr>
+        </thead>
+        <tbody id="calendar-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="publish-field">
+    <label for="garantia">Monto de garantía:</label>
+    <input type="number" id="garantia" min="0">
+  </div>
+
+  <button id="submit-post" type="button">Publicar</button>
+</main>
+
+<script>
+/* --------- BOTÓN DEL USUARIO ACTIVO --------- */
+/* --------- BOTÓN DEL USUARIO ACTIVO --------- */
+
+const emailActual = localStorage.getItem('usuario_actual');
+
+const users = JSON.parse(localStorage.getItem('localiar_users') || '[]');
+
+console.log("Usuario actual (username guardado):", emailActual);
+console.log("Usuarios guardados:", users);
+
+const usuarioObj = users.find(u => u.username === emailActual);
+
+console.log("Usuario encontrado:", usuarioObj);
+
+const usuarioActual = usuarioObj ? usuarioObj.username : 'DemoUsuario';
+
+const userBtn = document.getElementById('user-active-btn');
+userBtn.textContent = usuarioActual;
+
+userBtn.addEventListener('click', ()=> {
+    window.location.href = 'usuario.html';
+});
+
+/* --------- IMÁGENES Y PREVIEW --------- */
+const imagesInput = document.getElementById('images');
+const previewContainer = document.getElementById('preview-container');
+const submitBtn = document.getElementById('submit-post');
+
+let selectedFiles = [];
+let selectedDates = [];
+let fechasReservadas = [];
+
+
+/* --------- MODO EDICIÓN --------- */
+
+function getQueryParam(param) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(param);
+}
+
+const editIndex = getQueryParam("editar");
+let postEditando = null;
+
+if(editIndex !== null){
+    const postsGuardados = JSON.parse(localStorage.getItem('localiar_posts') || '[]');
+    postEditando = postsGuardados[editIndex];
+
+  
+
+if(postEditando && postEditando.reservas){
+
+    postEditando.reservas.forEach(reserva=>{
+
+        // 🟢 Nuevo formato (array de fechas)
+        if(Array.isArray(reserva.fechas)){
+            reserva.fechas.forEach(fecha=>{
+                fechasReservadas.push(fecha);
+            });
+        }
+
+        // 🟡 Formato viejo (fechaDesde / fechaHasta)
+        else if(reserva.fechaDesde && reserva.fechaHasta){
+
+            let inicio = new Date(reserva.fechaDesde);
+            let fin = new Date(reserva.fechaHasta);
+
+            while(inicio <= fin){
+                let y = inicio.getFullYear();
+                let m = String(inicio.getMonth()+1).padStart(2,'0');
+                let d = String(inicio.getDate()).padStart(2,'0');
+
+                fechasReservadas.push(`${y}-${m}-${d}`);
+
+                inicio.setDate(inicio.getDate()+1);
+            }
+        }
+
+    });
+}
+
+    if(postEditando){
+        document.querySelector("h2").textContent = "Editar Publicación";
+        submitBtn.textContent = "Guardar Cambios";
+
+        document.getElementById('title').value = postEditando.title;
+        document.getElementById('ciudad').value = postEditando.ciudad || "";
+        document.getElementById('direccion').value = postEditando.direccion || "";
+        document.getElementById('telefono').value = postEditando.telefono || "";
+        document.getElementById('descripcion').value = postEditando.descripcion || "";
+        document.getElementById('precio').value = postEditando.precio || "";
+        document.getElementById('garantia').value = postEditando.garantia || "";
+
+        document.getElementById('rubro').value = postEditando.rubro;
+document.getElementById('provincia').value = postEditando.provincia;
+
+        selectedDates = postEditando.disponibilidad || [];
+
+        if(postEditando.horario){
+    document.getElementById("range-desde").value = parseInt(postEditando.horario.desde);
+    document.getElementById("range-hasta").value = parseInt(postEditando.horario.hasta);
+}
+
+        // Cargar imágenes existentes
+        selectedFiles = [];
+        postEditando.images.forEach(base64=>{
+            selectedFiles.push(dataURLtoFile(base64));
+        });
+        renderPreviews();
+    }
+}
+
+// Convierte base64 a File
+function dataURLtoFile(dataurl, filename = "imagen.jpg") {
+    let arr = dataurl.split(','), 
+    mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]), 
+    n = bstr.length, 
+    u8arr = new Uint8Array(n);
+
+    while(n--){
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+
+    return new File([u8arr], filename, {type:mime});
+}
+
+function renderPreviews() {
+    previewContainer.innerHTML = "";
+    selectedFiles.forEach((file, idx) => {
+        const div = document.createElement('div');
+        div.classList.add('preview-image');
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.onload = () => URL.revokeObjectURL(img.src);
+        const btn = document.createElement('button');
+        btn.textContent = "×";
+        btn.addEventListener('click', ()=> {
+            selectedFiles.splice(idx,1);
+            renderPreviews();
+        });
+        div.appendChild(img);
+        div.appendChild(btn);
+        previewContainer.appendChild(div);
+    });
+}
+
+imagesInput.addEventListener('change', e=>{
+    const files = Array.from(e.target.files);
+    files.forEach(file=>{ if(selectedFiles.length<4) selectedFiles.push(file); });
+    renderPreviews();
+});
+
+function compressImage(file, maxWidth=800, quality=0.6){
+    return new Promise((resolve,reject)=>{
+        if(!file.type.match(/image\/(jpeg|jpg|png)/)) return reject(`Archivo no válido: ${file.name}`);
+        const reader = new FileReader();
+        reader.onload = ()=>{
+            const img = new Image();
+            img.onload = ()=>{
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(maxWidth / img.width, 1);
+                canvas.width = img.width*scale;
+                canvas.height = img.height*scale;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img,0,0,canvas.width,canvas.height);
+                resolve(canvas.toDataURL('image/jpeg',quality));
+            };
+            img.onerror = ()=>reject(`Error procesando: ${file.name}`);
+            img.src = reader.result;
+        };
+        reader.onerror = ()=>reject(`Error leyendo: ${file.name}`);
+        reader.readAsDataURL(file);
+    });
+}
+
+/* --------- PRECIO NETO DINÁMICO --------- */
+const precioInput = document.getElementById('precio');
+const precioInfo = document.getElementById('precio-info');
+precioInput.addEventListener('input', ()=>{
+    const valor=parseFloat(precioInput.value);
+    if(!isNaN(valor)){
+        const neto=(valor*0.92).toFixed(2);
+        precioInfo.textContent=`Usted recibiría aproximadamente $${neto} por día luego de cubrir los costos de administración y obligaciones fiscales.`;
+    } else {
+        precioInfo.textContent="El valor que indique se ajustará automáticamente para cubrir costos de administración y obligaciones fiscales.";
+    }
+});
+
+/* --------- CALENDARIO --------- */
+const calendarBody = document.getElementById('calendar-body');
+const monthYear = document.getElementById('month-year');
+const prevMonthBtn = document.getElementById('prev-month');
+const nextMonthBtn = document.getElementById('next-month');
+
+let today = new Date(); today.setHours(0,0,0,0);
+let currentMonth = today.getMonth();
+let currentYear = today.getFullYear();
+const months=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+function renderCalendar(month,year){
+    calendarBody.innerHTML="";
+    monthYear.textContent=`${months[month]} ${year}`;
+    const firstDay=new Date(year,month,1).getDay();
+    const daysInMonth=new Date(year,month+1,0).getDate();
+    let date=1;
+    for(let i=0;i<6;i++){
+        const row=document.createElement('tr');
+        for(let j=0;j<7;j++){
+            const cell=document.createElement('td');
+            if(i===0 && j<firstDay){cell.textContent="";}
+            else if(date>daysInMonth){cell.textContent="";}
+            else{
+                const cellDate=new Date(year,month,date); cellDate.setHours(0,0,0,0);
+                const formatted=cellDate.toISOString().split('T')[0];
+                cell.textContent=date;
+                if(cellDate<today){
+    cell.style.backgroundColor="#d3d3d3";
+    cell.style.color="#666";
+    cell.style.cursor="not-allowed";
+}
+
+// 🟥 Día reservado
+else if(fechasReservadas.includes(formatted)){
+    cell.style.backgroundColor="#dc3545";
+    cell.style.color="#fff";
+    cell.style.cursor="not-allowed";
+}
+
+// 🟢 Día disponible ya seleccionado
+else if(selectedDates.includes(formatted)){
+    cell.style.backgroundColor="#28a745";
+    cell.style.color="#fff";
+
+    cell.addEventListener('click', ()=>{
+        const idx = selectedDates.indexOf(formatted);
+        selectedDates.splice(idx,1);
+        renderCalendar(currentMonth,currentYear);
+    });
+}
+
+// ⚪ Día normal disponible
+else{
+    cell.addEventListener('click', ()=>{
+        selectedDates.push(formatted);
+        renderCalendar(currentMonth,currentYear);
+    });
+}
+                date++;
+            }
+            row.appendChild(cell);
+        }
+        calendarBody.appendChild(row);
+    }
+}
+prevMonthBtn.addEventListener('click',()=>{currentMonth--; if(currentMonth<0){currentMonth=11; currentYear--;} renderCalendar(currentMonth,currentYear);});
+nextMonthBtn.addEventListener('click',()=>{currentMonth++; if(currentMonth>11){currentMonth=0; currentYear++;} renderCalendar(currentMonth,currentYear);});
+renderCalendar(currentMonth,currentYear);
+
+/* --------- PUBLICAR --------- */
+const rubroInput = document.getElementById('rubro');
+const provinciaInput = document.getElementById('provincia');
+
+const rangeDesde = document.getElementById("range-desde");
+const rangeHasta = document.getElementById("range-hasta");
+const horarioPreview = document.getElementById("horario-preview");
+const sliderRange = document.getElementById("slider-range");
+
+function actualizarPreview(e) {
+    let desde = parseInt(rangeDesde.value);
+    let hasta = parseInt(rangeHasta.value);
+
+    if (desde >= hasta) {
+        if (e && e.target.id === "range-desde") {
+            rangeHasta.value = desde + 1; hasta = desde + 1;
+        } else {
+            rangeDesde.value = hasta - 1; desde = hasta - 1;
+        }
+    }
+
+    const percentDesde = (desde / 24) * 100;
+    const percentHasta = (hasta / 24) * 100;
+
+    sliderRange.style.left = percentDesde + "%";
+    sliderRange.style.width = (percentHasta - percentDesde) + "%";
+
+    horarioPreview.textContent = `${String(desde).padStart(2,"0")}:00 - ${String(hasta).padStart(2,"0")}:00`;
+}
+
+rangeDesde.addEventListener("input", actualizarPreview);
+rangeHasta.addEventListener("input", actualizarPreview);
+actualizarPreview();
+
+submitBtn.addEventListener('click', async ()=>{
+    const title=document.getElementById('title').value.trim();
+    const ciudad=document.getElementById('ciudad').value.trim();
+    const direccion=document.getElementById('direccion').value.trim();
+    const telefono=document.getElementById('telefono').value.trim();
+    const precio=parseFloat(precioInput.value)||0;
+    const descripcion=document.getElementById('descripcion').value.trim();
+    const garantia=parseFloat(document.getElementById('garantia').value)||0;
+
+    if(!title) return alert("Por favor ingresa un título");
+    if(selectedFiles.length===0) return alert("Por favor sube al menos una foto");
+    if(selectedDates.length === 0) {
+    return alert("Debes seleccionar al menos un día disponible en el calendario");
+}
+
+    try{
+        const imagesBase64=[];
+        for(const file of selectedFiles){
+            const compressed=await compressImage(file);
+            imagesBase64.push(compressed);
+        }
+
+        const posts=JSON.parse(localStorage.getItem('localiar_posts')||'[]');
+
+        let horario = {
+            desde: String(rangeDesde.value).padStart(2,"0")+":00",
+            hasta: String(rangeHasta.value).padStart(2,"0")+":00"
+        };
+
+        const nuevaData = {
+    id: postEditando ? postEditando.id : Date.now(),
+    title,
+    images: imagesBase64,
+    rubro: rubroInput.value,
+    provincia: provinciaInput.value,
+    ciudad,
+    precio,
+    descripcion,
+    direccion,
+    garantia,
+    disponibilidad: selectedDates,
+    horario,
+    usuario: usuarioActual,
+    telefono,
+    reservas: postEditando ? postEditando.reservas : []
+};
+
+if(postEditando){
+    posts[editIndex] = nuevaData;
+    alert("Publicación actualizada con éxito");
+} else {
+    posts.push(nuevaData);
+    alert("Publicación creada con éxito");
+}
+
+        localStorage.setItem('localiar_posts', JSON.stringify(posts));
+        alert("Publicación creada con éxito");
+        window.location.href='index.html';
+
+    }catch(err){
+        console.error(err);
+        alert("Ocurrió un error al procesar las imágenes. Usa JPG/PNG.");
+    }
+});
+</script>
+</body>
+</html>

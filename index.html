@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Localiar - Inicio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo" style="cursor:pointer;" onclick="window.location.href='index.html'">Localiar</div>
+
+  <div class="search-container">
+    <input type="text" id="search-input" placeholder="Buscar local...">
+    <button id="search-btn">Buscar</button>
+  </div>
+
+  <div class="user-actions">
+    <button id="user-btn" class="user-btn" onclick="window.location.href='usuario.html'">Usuario</button>
+    <button class="publish-btn" onclick="window.location.href='publicar.html'">Publicar</button>
+  </div>
+</header>
+
+<!-- LEFT SIDEBAR -->
+<!-- LEFT SIDEBAR -->
+<div class="sidebar">
+
+  <!-- FILTRO RUBRO -->
+  <div class="filter">
+    <label for="rubro-filter">Rubro:</label>
+    <select id="rubro-filter">
+      <option value="todos">Todos</option>
+      <option value="gimnasio">Gimnasio</option>
+      <option value="peluqueria">Peluquería</option>
+      <option value="taller">Taller</option>
+      <option value="local-vacio">Local vacío</option>
+      <option value="gastronomia">Gastronomía</option>
+      <option value="indumentaria">Indumentaria</option>
+      <option value="feria americana">feria americana</option>
+      <option value="foodtruck">foodtruck</option>
+      <option value="fabrica">fabrica</option>
+      <option value="consultorios medicos">consultorios medicos</option>
+      <option value="oficina">oficina</option>
+      <option value="salon de eventos">salon de eventos</option>
+    </select>
+  </div>
+
+  <!-- FILTRO PROVINCIA -->
+  <div class="filter">
+    <label for="provincia-filter">Provincia:</label>
+    <select id="provincia-filter">
+      <option value="todas">Todas</option>
+      <option value="Buenos Aires">Buenos Aires</option>
+      <option value="Catamarca">Catamarca</option>
+      <option value="Chaco">Chaco</option>
+      <option value="Chubut">Chubut</option>
+      <option value="Córdoba">Córdoba</option>
+      <option value="Corrientes">Corrientes</option>
+      <option value="Entre Ríos">Entre Ríos</option>
+      <option value="Formosa">Formosa</option>
+      <option value="Jujuy">Jujuy</option>
+      <option value="La Pampa">La Pampa</option>
+      <option value="La Rioja">La Rioja</option>
+      <option value="Mendoza">Mendoza</option>
+      <option value="Misiones">Misiones</option>
+      <option value="Neuquén">Neuquén</option>
+      <option value="Río Negro">Río Negro</option>
+      <option value="Salta">Salta</option>
+      <option value="San Juan">San Juan</option>
+      <option value="San Luis">San Luis</option>
+      <option value="Santa Cruz">Santa Cruz</option>
+      <option value="Santa Fe">Santa Fe</option>
+      <option value="Santiago del Estero">Santiago del Estero</option>
+      <option value="Tierra del Fuego">Tierra del Fuego</option>
+      <option value="Tucumán">Tucumán</option>
+      <option value="Ciudad Autónoma de Buenos Aires">Ciudad Autónoma de Buenos Aires</option>
+    </select>
+  </div>
+
+  <!-- CALENDARIO -->
+  <div class="filter">
+    <h3>Calendario</h3>
+    <div class="calendar-container">
+      <div class="calendar-header">
+        <button id="prev-month">&lt;</button>
+        <span id="month-year"></span>
+        <button id="next-month">&gt;</button>
+      </div>
+      <table class="calendar">
+        <thead>
+          <tr>
+            <th>D</th>
+            <th>L</th>
+            <th>M</th>
+            <th>M</th>
+            <th>J</th>
+            <th>V</th>
+            <th>S</th>
+          </tr>
+        </thead>
+        <tbody id="calendar-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BARRA HORARIO -->
+  <div class="filter">
+  <h3>Filtrar por horario</h3>
+  
+  <div class="slider-container">
+    <label for="hora-min">Desde: <span id="hora-min-label">0:00</span></label>
+    <input type="range" id="hora-min" min="0" max="24" value="0">
+  </div>
+  
+  <div class="slider-container">
+    <label for="hora-max">Hasta: <span id="hora-max-label">24:00</span></label>
+    <input type="range" id="hora-max" min="0" max="24" value="24">
+  </div>
+</div>
+
+  <!-- BOTÓN LIMPIAR -->
+  <button id="clear-filters" style="margin-top:10px; width:100%; padding:6px; background-color:#3483fa; color:white; border:none; border-radius:4px; cursor:pointer;">Limpiar filtros</button>
+
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="main-content">
+  <div id="cards-container" class="cards-container"></div>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer-banner">
+  <p>Publicidad aquí</p>
+</footer>
+
+<!-- SCRIPT -->
+<script>
+const cardsContainer = document.getElementById('cards-container');
+const rubroFilter = document.getElementById('rubro-filter');
+const provinciaFilter = document.getElementById('provincia-filter');
+const searchInput = document.getElementById('search-input');
+const searchBtn = document.getElementById('search-btn');
+
+const calendarBody = document.getElementById('calendar-body');
+const monthYear = document.getElementById('month-year');
+const prevMonthBtn = document.getElementById('prev-month');
+const nextMonthBtn = document.getElementById('next-month');
+const clearFiltersBtn = document.getElementById('clear-filters');
+
+// Sliders de horario
+const horaMinSlider = document.getElementById('hora-min');
+const horaMaxSlider = document.getElementById('hora-max');
+const horaMinLabel = document.getElementById('hora-min-label');
+const horaMaxLabel = document.getElementById('hora-max-label');
+
+const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+// ====== VARIABLES DEL MODAL (GLOBALES) ======
+let valoracionModal;
+let valoracionInput;
+let valoracionSubmit;
+let valoracionCancel;
+let valoracionModalTitle;
+let valoracionContext = null;
+let today = new Date();
+today.setHours(0,0,0,0);
+let currentMonth = today.getMonth();
+let currentYear = today.getFullYear();
+let selectedDates = JSON.parse(localStorage.getItem("filtro_fechas") || "[]");
+
+// Horario filtrado por barra (0-24 por defecto)
+let horaD = 0;
+let horaH = 24;
+
+const usuarioActual = localStorage.getItem('usuario_actual') || 'DemoUsuario';
+document.getElementById('user-btn').textContent = usuarioActual;
+
+// Función auxiliar para convertir "HH:MM" a número decimal
+function horaDecimal(horaStr){
+    const [h,m] = horaStr.split(':').map(Number);
+    return h + m/60;
+}
+
+// Formatear fecha YYYY-MM-DD
+function formatDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth()+1).padStart(2,'0');
+    const d = String(date.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+}
+
+// Renderizar calendario
+function renderCalendar(month, year){
+    calendarBody.innerHTML = "";
+    monthYear.textContent = `${months[month]} ${year}`;
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    let date = 1;
+    for(let i=0;i<6;i++){
+        const row = document.createElement('tr');
+        for(let j=0;j<7;j++){
+            const cell = document.createElement('td');
+            if(i===0 && j<firstDay){
+                cell.textContent = "";
+            } else if(date>daysInMonth){
+                cell.textContent = "";
+            } else {
+                const cellDate = new Date(year, month, date);
+                cellDate.setHours(0,0,0,0);
+                const formatted = formatDate(cellDate);
+                cell.textContent = date;
+
+                if(cellDate < today){
+                    cell.style.backgroundColor="#d3d3d3";
+                    cell.style.color="#666";
+                    cell.style.cursor="not-allowed";
+                } else {
+                    if(selectedDates.includes(formatted)){
+                        cell.classList.add('selected');
+                    }
+                    cell.addEventListener('click', ()=>{ 
+                        if(cellDate < today) return;
+                        const idx = selectedDates.indexOf(formatted);
+                        if(idx > -1){
+                            selectedDates.splice(idx,1);
+                            cell.classList.remove('selected');
+                        } else {
+                            selectedDates.push(formatted);
+                            cell.classList.add('selected');
+                        }
+                        localStorage.setItem("filtro_fechas", JSON.stringify(selectedDates));
+                        loadPosts();
+                    });
+                }
+                date++;
+            }
+            row.appendChild(cell);
+        }
+        calendarBody.appendChild(row);
+    }
+}
+
+// Flechas del calendario
+prevMonthBtn.addEventListener('click', ()=>{
+    currentMonth--;
+    if(currentMonth<0){ currentMonth=11; currentYear--; }
+    renderCalendar(currentMonth,currentYear);
+});
+nextMonthBtn.addEventListener('click', ()=>{
+    currentMonth++;
+    if(currentMonth>11){ currentMonth=0; currentYear++; }
+    renderCalendar(currentMonth,currentYear);
+});
+
+// Limpiar filtros
+clearFiltersBtn.addEventListener('click', ()=>{
+    rubroFilter.value = "todos";
+    provinciaFilter.value = "todas";
+    selectedDates = [];
+    horaD = 0;
+    horaH = 24;
+    horaMinSlider.value = 0;
+    horaMaxSlider.value = 24;
+    horaMinLabel.textContent = "0:00";
+    horaMaxLabel.textContent = "24:00";
+    localStorage.removeItem("filtro_fechas");
+    renderCalendar(currentMonth,currentYear);
+    loadPosts();
+});
+
+// Conectar sliders de horario
+horaMinSlider.addEventListener('input', ()=>{
+    let min = parseInt(horaMinSlider.value);
+    let max = parseInt(horaMaxSlider.value);
+    if(min >= max) min = max - 1; 
+    horaD = min;
+    horaMinLabel.textContent = `${min}:00`;
+    loadPosts();
+});
+
+horaMaxSlider.addEventListener('input', ()=>{
+    let min = parseInt(horaMinSlider.value);
+    let max = parseInt(horaMaxSlider.value);
+    if(max <= min) max = min + 1; 
+    horaH = max;
+    horaMaxLabel.textContent = `${max}:00`;
+    loadPosts();
+});
+
+// Cargar publicaciones con filtros
+function loadPosts() {
+    const posts = JSON.parse(localStorage.getItem("localiar_posts") || "[]");
+    cardsContainer.innerHTML = "";
+    // Inicializar valoración por defecto si no existe
+posts.forEach(post => {
+    if(!post.valoraciones){
+    post.valoraciones = [5]; // primera valoración por defecto
+    post.valoracion = 5;
+}
+});
+
+    const rubroValue = rubroFilter.value;
+    const provinciaValue = provinciaFilter.value;
+    const searchValue = searchInput.value.toLowerCase();
+
+    posts.forEach((post, index)=>{
+        // Filtro por rubro
+        if(rubroValue!=="todos" && post.rubro!==rubroValue) return;
+
+        // Filtro por provincia
+        if(provinciaValue!=="todas" && post.provincia!==provinciaValue) return;
+
+        // Filtro de búsqueda por texto
+        if(searchValue &&
+           !post.title.toLowerCase().includes(searchValue) &&
+           !(post.ciudad || '').toLowerCase().includes(searchValue) &&
+           !(post.direccion || '').toLowerCase().includes(searchValue)) return;
+
+        // Filtro por fechas
+        if(selectedDates.length>0){
+            if(post.disponibilidad && post.disponibilidad.length>0){
+                const coincide = selectedDates.every(f => post.disponibilidad.includes(f));
+                if(!coincide) return;
+            }
+        }
+
+        // FILTRO DE HORARIO POR SOLAPAMIENTO
+        if(post.horario && post.horario.desde && post.horario.hasta){
+            const postDesde = horaDecimal(post.horario.desde);
+            const postHasta = horaDecimal(post.horario.hasta);
+            if(postHasta <= horaD || postDesde >= horaH) return;
+        }
+
+        // CREAR CARD
+        const card = document.createElement('div');
+        card.classList.add('card');
+
+        const img = document.createElement('img');
+        img.src = post.images[0];
+        img.alt = post.title;
+
+        const h4 = document.createElement('h4');
+        h4.textContent = post.title;
+        
+
+        const rubroP = document.createElement('p');
+        rubroP.innerHTML = `<strong>Rubro:</strong> ${post.rubro || 'No especificado'}`;
+
+        const provP = document.createElement('p');
+        provP.innerHTML = `<strong>Provincia:</strong> ${post.provincia || 'No especificada'}`;
+
+        const ciudadP = document.createElement('p');
+        ciudadP.innerHTML = `<strong>Ciudad/Barrio:</strong> ${post.ciudad || 'No especificada'}`;
+
+        const precioP = document.createElement('p');
+        precioP.innerHTML = `<strong>Precio por día:</strong> $${post.precio || '0'} <span style="font-size:0.9em;color:#555;">+ impuestos</span>`;
+
+        let horarioP = null;
+        if(post.horario && post.horario.desde && post.horario.hasta){
+            horarioP = document.createElement('p');
+            horarioP.innerHTML = `<strong>Horario disponible:</strong> ${post.horario.desde} - ${post.horario.hasta}`;
+        }
+
+        const btnContainer = document.createElement('div');
+        btnContainer.style.marginTop = '10px';
+        btnContainer.style.display = 'flex';
+        btnContainer.style.justifyContent = 'center';
+
+        if(post.usuario === usuarioActual){
+            const delBtn = document.createElement('button');
+            delBtn.textContent = 'Eliminar';
+            delBtn.style.backgroundColor = '#ff4d4f';
+            delBtn.style.color = '#fff';
+            delBtn.style.border = 'none';
+            delBtn.style.padding = '6px 12px';
+            delBtn.style.borderRadius = '4px';
+            delBtn.style.cursor = 'pointer';
+            delBtn.addEventListener('click',(e)=>{
+                e.stopPropagation();
+                if(confirm('¿Desea eliminar esta publicación?')){
+                    posts.splice(index,1);
+                    localStorage.setItem('localiar_posts', JSON.stringify(posts));
+                    loadPosts();
+                }
+            });
+            btnContainer.appendChild(delBtn);
+        }
+        // Botón de valorar local para inquilino (si no es propietario)
+if(post.usuario !== usuarioActual){
+    const valBtn = document.createElement('button');
+    valBtn.textContent = 'Valorar';
+    valBtn.style.backgroundColor = '#ffc107';
+    valBtn.style.color = '#fff';
+    valBtn.style.border = 'none';
+    valBtn.style.padding = '6px 12px';
+    valBtn.style.borderRadius = '4px';
+    valBtn.style.cursor = 'pointer';
+    valBtn.style.marginLeft = '10px';
+
+    valBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // evitar redirección al click de la card
+        valoracionLocalContext = index; // guardamos índice del post
+        
+        valoracionLocalTitle.textContent = `Valorar Local: ${post.title}`;
+        valoracionLocalModal.style.display = 'flex';
+    });
+
+    btnContainer.appendChild(valBtn);
+}
+
+        card.addEventListener('click', ()=>{
+            localStorage.setItem('ver_post_index', index);
+            window.location.href='publicacion.html';
+        });
+
+        card.appendChild(img);
+        card.appendChild(h4);
+        card.appendChild(rubroP);
+        card.appendChild(provP);
+        card.appendChild(ciudadP);
+        card.appendChild(precioP);
+
+        if(horarioP){
+            card.appendChild(horarioP);
+        }
+// ⭐ Valoración del local
+const valoracion = Math.round(post.valoracion || 5); // Por defecto 5 estrellas si no tiene
+const starsContainer = document.createElement('p');
+starsContainer.innerHTML = '⭐'.repeat(valoracion) + '☆'.repeat(5 - valoracion);
+starsContainer.style.textAlign = 'center';
+starsContainer.style.marginTop = '5px';
+card.appendChild(starsContainer);
+        card.appendChild(btnContainer);
+
+        cardsContainer.appendChild(card);
+    });
+}
+
+// Eventos filtros
+rubroFilter.addEventListener('change', loadPosts);
+provinciaFilter.addEventListener('change', loadPosts);
+searchBtn.addEventListener('click', loadPosts);
+searchInput.addEventListener('keyup',(e)=>{
+    if(e.key==='Enter') loadPosts();
+});
+
+// Inicializar
+renderCalendar(currentMonth,currentYear);
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    // Obtener elementos del modal DESPUÉS de que el DOM esté cargado
+    window.valoracionLocalModal = document.getElementById('valoracion-local-modal');
+    window.valoracionLocalInput = document.getElementById('valoracion-local-input');
+    window.valoracionLocalSubmit = document.getElementById('valoracion-local-submit');
+    window.valoracionLocalCancel = document.getElementById('valoracion-local-cancel');
+    window.valoracionLocalTitle = document.getElementById('valoracion-local-title');
+
+    window.valoracionLocalContext = null;
+
+    // Botón cancelar
+    valoracionLocalCancel.addEventListener("click", function(){
+        valoracionLocalModal.style.display = "none";
+    });
+
+    // Botón enviar valoración
+    const estrellas = document.querySelectorAll("#estrellas-container span");
+let valorSeleccionado = 0;
+
+// Pintar estrellas
+function pintarEstrellas(valor){
+    estrellas.forEach(star => {
+        if(star.dataset.value <= valor){
+            star.classList.add("active");
+        } else {
+            star.classList.remove("active");
+        }
+    });
+}
+
+// Hover efecto
+estrellas.forEach(star => {
+    star.addEventListener("mouseover", function(){
+        pintarEstrellas(this.dataset.value);
+    });
+
+    star.addEventListener("mouseout", function(){
+        pintarEstrellas(valorSeleccionado);
+    });
+
+    star.addEventListener("click", function(){
+    valorSeleccionado = parseInt(this.dataset.value);
+    pintarEstrellas(valorSeleccionado);
+});
+});
+valoracionLocalSubmit.addEventListener("click", function(){
+
+    if(valorSeleccionado === 0){
+        alert("Seleccioná una valoración");
+        return;
+    }
+
+    const posts = JSON.parse(localStorage.getItem("localiar_posts") || "[]");
+
+    if(valoracionLocalContext !== null){
+
+        if(!posts[valoracionLocalContext].valoraciones){
+            posts[valoracionLocalContext].valoraciones = [];
+        }
+
+        posts[valoracionLocalContext].valoraciones.push(valorSeleccionado);
+
+        if(posts[valoracionLocalContext].valoraciones.length > 10){
+            posts[valoracionLocalContext].valoraciones.shift();
+        }
+
+        const suma = posts[valoracionLocalContext].valoraciones.reduce((a,b)=>a+b,0);
+        const promedio = suma / posts[valoracionLocalContext].valoraciones.length;
+
+        posts[valoracionLocalContext].valoracion = promedio;
+
+        // 🔹 NUEVO BLOQUE: Guardar comentario + estrellas en valoracionesComentarios
+        const comentario = document.getElementById('valoracion-local-comentario').value.trim();
+        if(comentario || valorSeleccionado){
+            if(!posts[valoracionLocalContext].valoracionesComentarios){
+                posts[valoracionLocalContext].valoracionesComentarios = [];
+            }
+            posts[valoracionLocalContext].valoracionesComentarios.push({
+                usuario: usuarioActual,
+                texto: comentario,
+                valoracion: valorSeleccionado,
+                fecha: new Date().toISOString()
+            });
+        }
+
+        localStorage.setItem("localiar_posts", JSON.stringify(posts));
+    }
+
+    valoracionLocalModal.style.display = "none";
+    valorSeleccionado = 0;
+    pintarEstrellas(0);
+    document.getElementById('valoracion-local-comentario').value = ""; // limpiar textarea
+    loadPosts();
+});
+
+});
+
+loadPosts();
+</script>
+<!-- Modal de valoración de local -->
+<div id="valoracion-local-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; 
+     background-color: rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:20px; border-radius:10px; max-width:400px; width:90%;">
+    <h3 id="valoracion-local-title">Valorar Local</h3>
+    <p>Selecciona tu valoración:</p>
+
+<div id="estrellas-container">
+  <span data-value="1" class="star">★</span>
+  <span data-value="2" class="star">★</span>
+  <span data-value="3" class="star">★</span>
+  <span data-value="4" class="star">★</span>
+  <span data-value="5" class="star">★</span>
+</div>
+<p style="margin-top:10px;">Deja un comentario (opcional):</p>
+<textarea id="valoracion-local-comentario" style="width:100%; padding:5px; border-radius:4px; border:1px solid #ccc;" rows="3" placeholder="Escribe tu comentario..."></textarea>
+    <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
+      <button id="valoracion-local-cancel" style="padding:5px 10px;">Cancelar</button>
+      <button id="valoracion-local-submit" style="padding:5px 10px; background:#28a745; color:#fff; border:none; border-radius:4px;">Enviar</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

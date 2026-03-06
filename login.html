@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Localiar</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+  .login-container {
+    max-width: 400px;
+    margin: 80px auto;
+    padding: 20px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  .login-container h2 {
+    text-align:center;
+    margin-bottom:20px;
+  }
+
+  .login-field {
+    margin-bottom:15px;
+  }
+
+  .login-field label {
+    display:block;
+    margin-bottom:5px;
+    font-weight:600;
+  }
+
+  .login-field input {
+    width:100%;
+    padding:8px;
+    border-radius:6px;
+    border:1px solid #ccc;
+  }
+
+  #login-btn {
+    width:100%;
+    padding:10px;
+    background:#3483fa;
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+    margin-top:10px;
+  }
+
+  #register-link {
+    display:block;
+    text-align:center;
+    margin-top:10px;
+    color:#3483fa;
+    cursor:pointer;
+    text-decoration:underline;
+  }
+
+  #terms-container {
+    max-height: 200px;
+    overflow-y: auto;
+    border:1px solid #ccc;
+    border-radius:6px;
+    padding:10px;
+    margin-bottom:10px;
+    background:#f9f9f9;
+    font-size:0.85em;
+  }
+
+  #accept-terms {
+    margin-right:5px;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="login-container">
+
+  <h2 id="form-title">Iniciar Sesión</h2>
+
+  <div class="login-field">
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="ejemplo@correo.com">
+  </div>
+
+  <div class="login-field">
+    <label for="password">Contraseña</label>
+    <input type="password" id="password" placeholder="Contraseña">
+  </div>
+
+  <!-- CAMPOS SOLO PARA REGISTRO -->
+  <div id="register-extra-fields" style="display:none;">
+
+    <div class="login-field">
+      <label for="username">Nombre de usuario</label>
+      <input type="text" id="username" placeholder="Tu nombre público">
+    </div>
+
+    <div class="login-field">
+      <label for="birthdate">Fecha de nacimiento</label>
+      <input type="date" id="birthdate">
+    </div>
+
+  </div>
+
+  <div id="terms-container">
+    <h3>Términos y Condiciones - Localiar</h3>
+
+    <p><strong>1 Objeto del Contrato</strong></p>
+    <p>El presente contrato regula la relación entre: Anfitrión, Cliente y Localiar. No constituye alquiler ni subarriendo.</p>
+
+    <p><strong>2 Declaración de Capacidad</strong></p>
+    <p>Todos declaran ser mayores de edad y contar con capacidad legal.</p>
+
+    <p><strong>3 Prestación del Servicio</strong></p>
+    <p>El anfitrión ofrece un servicio de uso temporal del espacio.</p>
+
+    <p><strong>4 Monto de Garantía y Prepago</strong></p>
+    <p>El cliente realiza un prepago como garantía ante posibles daños.</p>
+
+    <p><strong>5 Función de Localiar</strong></p>
+    <p>Localiar actúa como intermediario y auditor.</p>
+
+    <p><strong>6 Obligaciones del Anfitrión</strong></p>
+    <p>Poner el espacio en condiciones y contar con habilitaciones.</p>
+
+    <p><strong>7 Obligaciones del Cliente</strong></p>
+    <p>Usar el espacio correctamente y respetar condiciones.</p>
+
+    <p><strong>8 Pago y Condiciones</strong></p>
+    <p>El cliente abona mediante medios habilitados.</p>
+
+    <p><strong>9 Responsabilidad</strong></p>
+    <p>Cada parte es responsable de sus actos.</p>
+
+    <p><strong>10 Duración y Finalización</strong></p>
+    <p>El servicio finaliza al concluir el período contratado.</p>
+
+    <p><strong>11 Aceptación del Contrato</strong></p>
+    <p>Al aceptar, reconocen que se trata de un servicio temporal.</p>
+
+    <p><strong>12 Legislación Aplicable</strong></p>
+    <p>Rige la legislación de la República Argentina.</p>
+  </div>
+
+  <div class="login-field">
+    <input type="checkbox" id="accept-terms">
+    <label for="accept-terms">He leído y acepto los términos y condiciones</label>
+  </div>
+
+  <button id="login-btn">Ingresar</button>
+  <span id="register-link">¿No tienes cuenta? Regístrate</span>
+
+</div>
+
+<script src="login.js"></script>
+
+</body>
+</html>
