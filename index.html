@@ -10,7 +10,7 @@
 
 <!-- HEADER -->
 <header class="header">
-  <div class="logo" style="cursor:pointer;" onclick="window.location.href='index.html'">Localiar</div>
+  <div class="logo"></div>
 
   <div class="search-container">
     <input type="text" id="search-input" placeholder="Buscar local...">
@@ -20,7 +20,11 @@
   <div class="user-actions">
     <button id="user-btn" class="user-btn" onclick="window.location.href='usuario.html'">Usuario</button>
     <button class="publish-btn" onclick="window.location.href='publicar.html'">Publicar</button>
-  </div>
+
+    <button id="mobile-filters-btn" class="mobile-filters-btn">
+        ☰
+    </button>
+</div>
 </header>
 
 <!-- LEFT SIDEBAR -->
@@ -31,20 +35,23 @@
   <div class="filter">
     <label for="rubro-filter">Rubro:</label>
     <select id="rubro-filter">
-      <option value="todos">Todos</option>
-      <option value="gimnasio">Gimnasio</option>
-      <option value="peluqueria">Peluquería</option>
-      <option value="taller">Taller</option>
-      <option value="local-vacio">Local vacío</option>
-      <option value="gastronomia">Gastronomía</option>
-      <option value="indumentaria">Indumentaria</option>
-      <option value="feria americana">feria americana</option>
-      <option value="foodtruck">foodtruck</option>
-      <option value="fabrica">fabrica</option>
-      <option value="consultorios medicos">consultorios medicos</option>
-      <option value="oficina">oficina</option>
-      <option value="salon de eventos">salon de eventos</option>
-    </select>
+<option value="todos">Todos</option>
+<option value="deportes">Deportes</option>
+<option value="fabrica">fabrica</option>
+<option value="feria americana">feria americana</option>
+<option value="foodtruck">foodtruck</option>
+<option value="gastronomia">Gastronomía</option>
+<option value="gimnasio">Gimnasio</option>
+<option value="indumentaria">Indumentaria</option>
+<option value="local-vacio">Local vacío</option>
+<option value="peluqueria">Peluquería</option>
+<option value="salones infantiles">Salones infantiles</option>
+<option value="stand">Stand</option>
+<option value="taller">Taller</option>
+<option value="vehiculos">Vehiculos</option>
+<option value="venta en la via publica">Venta en la vía pública</option>
+<option value="viajes">Viajes</option>
+</select>
   </div>
 
   <!-- FILTRO PROVINCIA -->
@@ -124,6 +131,7 @@
   <button id="clear-filters" style="margin-top:10px; width:100%; padding:6px; background-color:#3483fa; color:white; border:none; border-radius:4px; cursor:pointer;">Limpiar filtros</button>
 
 </div>
+
 
 <!-- MAIN CONTENT -->
 <main class="main-content">
@@ -549,6 +557,32 @@ valoracionLocalSubmit.addEventListener("click", function(){
 });
 
 loadPosts();
+// BOTÓN FILTROS MOBILE
+document.addEventListener("DOMContentLoaded", () => {
+
+const mobileFiltersBtn = document.getElementById("mobile-filters-btn");
+const sidebar = document.querySelector(".sidebar");
+const overlay = document.getElementById("filters-overlay");
+
+if(mobileFiltersBtn && sidebar && overlay){
+
+mobileFiltersBtn.addEventListener("click", () => {
+
+sidebar.classList.toggle("sidebar-open");
+overlay.classList.toggle("active");
+
+});
+
+overlay.addEventListener("click", () => {
+
+sidebar.classList.remove("sidebar-open");
+overlay.classList.remove("active");
+
+});
+
+}
+
+});
 </script>
 <!-- Modal de valoración de local -->
 <div id="valoracion-local-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; 
@@ -572,6 +606,7 @@ loadPosts();
     </div>
   </div>
 </div>
+<div id="filters-overlay" class="filters-overlay"></div>
 
 </body>
 </html>

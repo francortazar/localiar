@@ -6,6 +6,10 @@
   <title>Detalle de la Publicación - Localiar</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    body{
+      overflow-x:hidden;
+    }
+
     .slider {
       position: relative;
       max-width: 600px;
@@ -13,13 +17,16 @@
       overflow: hidden;
       border-radius: 10px;
     }
+
     .slides img {
       width: 100%;
       display: none;
     }
+
     .slides img.active {
       display: block;
     }
+
     .slider-btn {
       position: absolute;
       top: 50%;
@@ -31,29 +38,47 @@
       cursor: pointer;
       border-radius: 50%;
     }
+
     .prev { left: 10px; }
     .next { right: 10px; }
 
-    .publication-info { max-width: 600px; margin: 120px auto 50px; padding:20px; background:#fff; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+    .publication-info {
+      max-width:600px;
+      width:100%;
+      margin:120px auto 50px;
+      padding:20px;
+      box-sizing:border-box;
+    }
+
     .publication-info p { margin: 5px 0; }
 
-    .calendar-container { max-width: 600px; margin: 20px auto; }
-    .precio-total { font-weight: bold; margin-top: 10px; font-size:1.1em; }
+    .calendar-container{
+      max-width:600px;
+      width:100%;
+      margin:20px auto;
+      box-sizing:border-box;
+    }
+
+    .precio-total {
+      font-weight: bold;
+      margin-top: 10px;
+      font-size:1.1em;
+    }
 
     .left-banner, .right-banner {
       position: fixed;
-      top: 60px;
-      width: 80px;
-      height: calc(100% - 60px);
+      top: 120px;
+      width: 160px;
+      height: 600px;
       background-color: #f0f0f0;
       display: flex;
       align-items: center;
       justify-content: center;
-      writing-mode: vertical-rl;
       text-align: center;
       font-weight: bold;
       z-index: 500;
     }
+
     .left-banner { left: 0; }
     .right-banner { right: 0; }
 
@@ -65,23 +90,22 @@
       vertical-align: middle;
       transition: color 0.2s;
     }
+
     .favorite-btn.favorito {
       color: red;
     }
 
-    /* Botón usuario activo en header */
     .header .user-btn {
-        background-color: #fff;
-        color: #3483fa;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-        margin-left: auto;
+      background-color: #fff;
+      color: #3483fa;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-left: auto;
     }
 
-    /* Estilos para preguntas */
     #preguntas-container {
       max-width: 600px;
       margin: 30px auto;
@@ -90,18 +114,22 @@
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
+
     .pregunta-item {
       border-bottom: 1px solid #ddd;
       padding: 10px 0;
     }
+
     .pregunta-item p {
       margin: 2px 0;
     }
+
     .pregunta-item .timestamp {
       font-size: 0.75em;
       color: #888;
       margin-left: 5px;
     }
+
     .respuesta-btn {
       background:#3483fa;
       color:#fff;
@@ -111,6 +139,92 @@
       cursor:pointer;
       font-size:0.85em;
       margin-top:5px;
+    }
+
+    .mobile-banner{
+      display:none;
+    }
+
+    @media (max-width:768px){
+      .left-banner,
+      .right-banner{
+        display:none !important;
+      }
+
+      .mobile-banner{
+        display:flex;
+        position:fixed;
+        bottom:0;
+        left:0;
+        width:100%;
+        height:60px;
+        background:#f0f0f0;
+        justify-content:center;
+        align-items:center;
+        font-weight:bold;
+        z-index:1000;
+      }
+
+      .publication-info{
+        margin-bottom:120px;
+      }
+    }
+
+    html, body{
+      width:100%;
+      max-width:100%;
+      overflow-x:hidden;
+    }
+
+    .calendar-container{
+      width:100%;
+    }
+
+    .calendar{
+      width:100%;
+      max-width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      overflow:hidden;
+    }
+
+    .calendar th,
+    .calendar td{
+      width:14.28%;
+      text-align:center;
+      padding:8px 4px;
+      font-size:14px;
+    }
+
+    .calendar td{
+      border-radius:6px;
+    }
+
+    @media (max-width:768px){
+      .calendar th,
+      .calendar td{
+        padding:6px 2px;
+        font-size:12px;
+      }
+    }
+
+    .calendario,
+    #calendar{
+      width:100%;
+      max-width:100%;
+      overflow:hidden;
+    }
+
+    @media (max-width:768px){
+      .calendar-container{
+        padding:0;
+      }
+
+      .calendar th,
+      .calendar td{
+        font-size:11px;
+        padding:4px 1px;
+      }
     }
   </style>
 </head>
@@ -122,10 +236,15 @@
 
   <div class="left-banner">Publicidad</div>
   <div class="right-banner">Publicidad</div>
+  <div class="mobile-banner">Publicidad</div>
 
   <main class="publication-info">
-    <h2 id="title"></h2>
-    <span id="favorite-btn" class="favorite-btn">&#9825;</span>
+    <div style="display:flex; align-items:center; gap:25px;">
+      <h2 id="title"></h2>
+      <span id="favorite-btn" class="favorite-btn">&#9825;</span>
+      <span id="share-btn" style="font-size:1.4rem; cursor:pointer;" title="Compartir">📤</span>
+    </div>
+
     <p><strong>Rubro:</strong> <span id="rubro"></span></p>
     <p><strong>Provincia:</strong> <span id="provincia"></span></p>
     <p><strong>Dirección:</strong> <span id="direccion"></span></p>
@@ -144,13 +263,14 @@
         <span id="month-year"></span>
         <button id="next-month">&gt;</button>
       </div>
+
       <table class="calendar">
         <thead>
           <tr>
             <th>D</th>
             <th>L</th>
-            <th>M</th>
-            <th>M</th>
+            <th>Ma</th>
+            <th>Mi</th>
             <th>J</th>
             <th>V</th>
             <th>S</th>
@@ -158,10 +278,11 @@
         </thead>
         <tbody id="calendar-body"></tbody>
       </table>
+
       <p class="precio-total">
-        Total: $<span id="total">0</span> 
-        
+        Total: $<span id="total">0</span>
       </p>
+
       <button id="contratar-btn" style="margin-top:15px;padding:10px 20px;background:#3483fa;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;">
         Contratar
       </button>
@@ -177,93 +298,138 @@
 
 <script>
 function getQueryParam(param) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(param);
+  const params = new URLSearchParams(window.location.search);
+  return params.get(param);
+}
+
+function formatDateLocal(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 let index = getQueryParam('id');
 const posts = JSON.parse(localStorage.getItem('localiar_posts') || '[]');
 
 if(index === null) {
-    index = localStorage.getItem('ver_post_index');
+  index = localStorage.getItem('ver_post_index');
 }
 
 const post = posts[index];
 
-document.getElementById('title').textContent = post.title;
-document.getElementById('rubro').textContent = post.rubro;
-document.getElementById('provincia').textContent = post.provincia;
+if (!post) {
+  alert("Publicación no encontrada.");
+  window.location.href = "index.html";
+  throw new Error("Post no encontrado");
+}
+
+// Valores por defecto para evitar errores si alguna propiedad no existe
+if (!post.images) post.images = [];
+if (!post.preguntas) post.preguntas = [];
+if (!post.comentarios) post.comentarios = [];
+if (!post.reservas) post.reservas = [];
+if (!post.notificaciones) post.notificaciones = [];
+if (!post.valoracionesComentarios) post.valoracionesComentarios = [];
+if (!post.disponibilidad) post.disponibilidad = [];
+
+document.getElementById('title').textContent = post.title || '';
+document.getElementById('rubro').textContent = post.rubro || '';
+document.getElementById('provincia').textContent = post.provincia || '';
 document.getElementById('direccion').textContent = post.direccion || 'No especificada';
 document.getElementById('usuario').textContent = post.usuario || post.email || "Usuario";
+
 // 🔹 Botón editar (solo si es el propietario)
 const usuarioActualEdit = localStorage.getItem('usuario_actual');
 
 if(usuarioActualEdit === post.usuario){
+  const editarBtn = document.createElement("button");
+  editarBtn.textContent = "Editar publicación";
+  editarBtn.style.marginTop = "15px";
+  editarBtn.style.padding = "10px";
+  editarBtn.style.background = "#f0ad4e";
+  editarBtn.style.border = "none";
+  editarBtn.style.borderRadius = "6px";
+  editarBtn.style.cursor = "pointer";
 
-    const editarBtn = document.createElement("button");
-    editarBtn.textContent = "Editar publicación";
-    editarBtn.style.marginTop = "15px";
-    editarBtn.style.padding = "10px";
-    editarBtn.style.background = "#f0ad4e";
-    editarBtn.style.border = "none";
-    editarBtn.style.borderRadius = "6px";
-    editarBtn.style.cursor = "pointer";
+  editarBtn.addEventListener("click", () => {
+    window.location.href = `publicar.html?editar=${index}`;
+  });
 
-    editarBtn.addEventListener("click", () => {
-        window.location.href = `publicar.html?editar=${index}`;
-    });
-
-    document.querySelector(".publication-info").appendChild(editarBtn);
+  document.querySelector(".publication-info").appendChild(editarBtn);
 }
-
 
 const descripcionP = document.createElement('p');
 descripcionP.innerHTML = `<strong>Descripción:</strong> ${post.descripcion || 'No especificada'}`;
 document.querySelector('.publication-info').insertBefore(descripcionP, document.querySelector('.slider'));
+
 // 🔹 Mostrar ID de la publicación (para soporte técnico)
 const idP = document.createElement('p');
 idP.style.fontSize = "0.85em";
 idP.style.color = "#888";
 idP.innerHTML = `<strong>ID Publicación:</strong> ${index}`;
 document.querySelector('.publication-info').insertBefore(idP, document.querySelector('.slider'));
-// 🔹 Comentarios normales (si quieres otros comentarios de usuarios aparte de valoraciones)
+
+// 🔹 Comentarios normales
 if(post.comentarios && post.comentarios.length > 0){
-    const comentariosDiv = document.createElement('div');
-    comentariosDiv.style.marginTop = "10px";
-    comentariosDiv.innerHTML = "<h4>Comentarios generales:</h4>";
-    post.comentarios.slice().reverse().forEach(c => {
-        const p = document.createElement('p');
-        const fecha = new Date(c.fecha);
-        p.innerHTML = `<strong>${c.usuario}:</strong> ${c.texto} <span style="font-size:0.8em; color:#888;">(${fecha.toLocaleString()})</span>`;
-        comentariosDiv.appendChild(p);
-    });
-    document.querySelector('.publication-info').appendChild(comentariosDiv);
+  const comentariosDiv = document.createElement('div');
+  comentariosDiv.style.marginTop = "10px";
+  comentariosDiv.innerHTML = "<h4>Comentarios generales:</h4>";
+
+  post.comentarios.slice().reverse().forEach(c => {
+    const p = document.createElement('p');
+    const fecha = new Date(c.fecha);
+    p.innerHTML = `<strong>${c.usuario}:</strong> ${c.texto} <span style="font-size:0.8em; color:#888;">(${fecha.toLocaleString()})</span>`;
+    comentariosDiv.appendChild(p);
+  });
+
+  document.querySelector('.publication-info').appendChild(comentariosDiv);
 }
-// 🔹 Mostrar comentarios de valoraciones de inquilinos
-
-
 
 let disponibilidadGuardada = post.disponibilidad || [];
 
 const slidesContainer = document.getElementById('slides');
+const prevSlideBtn = document.getElementById('prev-slide');
+const nextSlideBtn = document.getElementById('next-slide');
 let currentSlide = 0;
-post.images.forEach((imgSrc,i)=>{
+
+if (post.images.length > 0) {
+  post.images.forEach((imgSrc, i) => {
+    const img = document.createElement('img');
+    img.src = imgSrc;
+    if(i === 0) img.classList.add('active');
+    slidesContainer.appendChild(img);
+  });
+} else {
   const img = document.createElement('img');
-  img.src = imgSrc;
-  if(i===0) img.classList.add('active');
+  img.src = '';
+  img.alt = 'Sin imágenes';
+  img.style.display = 'block';
+  img.style.background = '#eee';
+  img.style.minHeight = '250px';
   slidesContainer.appendChild(img);
-});
+  prevSlideBtn.style.display = 'none';
+  nextSlideBtn.style.display = 'none';
+}
+
 const slides = slidesContainer.querySelectorAll('img');
-document.getElementById('prev-slide').addEventListener('click', ()=>{
-  slides[currentSlide].classList.remove('active');
-  currentSlide = (currentSlide -1 + slides.length) % slides.length;
-  slides[currentSlide].classList.add('active');
-});
-document.getElementById('next-slide').addEventListener('click', ()=>{
-  slides[currentSlide].classList.remove('active');
-  currentSlide = (currentSlide +1) % slides.length;
-  slides[currentSlide].classList.add('active');
-});
+
+if (slides.length > 1) {
+  prevSlideBtn.addEventListener('click', () => {
+    slides[currentSlide].classList.remove('active');
+    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+    slides[currentSlide].classList.add('active');
+  });
+
+  nextSlideBtn.addEventListener('click', () => {
+    slides[currentSlide].classList.remove('active');
+    currentSlide = (currentSlide + 1) % slides.length;
+    slides[currentSlide].classList.add('active');
+  });
+} else {
+  prevSlideBtn.style.display = 'none';
+  nextSlideBtn.style.display = 'none';
+}
 
 const calendarBody = document.getElementById('calendar-body');
 const monthYear = document.getElementById('month-year');
@@ -282,137 +448,152 @@ const precioPorDia = post.precio || 0;
 const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 function renderCalendar(month, year){
-  calendarBody.innerHTML="";
-  monthYear.textContent=`${months[month]} ${year}`;
+  calendarBody.innerHTML = "";
+  monthYear.textContent = `${months[month]} ${year}`;
+
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   let date = 1;
 
-  for(let i=0;i<6;i++){
+  for(let i = 0; i < 6; i++){
     const row = document.createElement('tr');
-    for(let j=0;j<7;j++){
+
+    for(let j = 0; j < 7; j++){
       const cell = document.createElement('td');
-      if(i===0 && j<firstDay){ 
-          cell.textContent="";
-      } else if(date>daysInMonth){
-          cell.textContent="";
+
+      if(i === 0 && j < firstDay){
+        cell.textContent = "";
+      } else if(date > daysInMonth){
+        cell.textContent = "";
       } else {
         cell.textContent = date;
         const cellDate = new Date(year, month, date);
-        const formatted = cellDate.toISOString().split('T')[0];
         cellDate.setHours(0,0,0,0);
+        const formatted = formatDateLocal(cellDate);
 
         if(cellDate < today){
-          cell.style.backgroundColor="#d3d3d3";
-          cell.style.color="#666";
-          cell.style.cursor="not-allowed";
+          cell.style.backgroundColor = "#d3d3d3";
+          cell.style.color = "#666";
+          cell.style.cursor = "not-allowed";
         } else {
-
           let disponible = false;
 
-if(disponibilidadGuardada.length>0){
-  disponible = disponibilidadGuardada.includes(formatted);
-} else {
-  disponible = true;
-}
+          if(disponibilidadGuardada.length > 0){
+            disponible = disponibilidadGuardada.includes(formatted);
+          } else {
+            disponible = true;
+          }
 
-// 🔴 verificar si la fecha ya está reservada
-let reservada = false;
-if(post.reservas){
-  reservada = post.reservas.some(r => (r.fechas || []).includes(formatted));
-}
+          // 🔴 verificar si la fecha ya está reservada
+          let reservada = false;
+          if(post.reservas){
+            reservada = post.reservas.some(r => (r.fechas || []).includes(formatted));
+          }
 
-if(reservada){
-  disponible = false;
-}
+          if(reservada){
+            disponible = false;
+          }
 
           if(disponible){
-            cell.style.backgroundColor="#28a745";
-            cell.style.color="#fff";
-            cell.style.cursor="pointer";
+            cell.style.backgroundColor = "#28a745";
+            cell.style.color = "#fff";
+            cell.style.cursor = "pointer";
 
-            cell.addEventListener('click', ()=>{
-  if(selectedDates.includes(formatted)){
-    cell.style.backgroundColor="#28a745";
-    selectedDates = selectedDates.filter(d=>d!==formatted);
-  } else {
-    cell.style.backgroundColor="#0d6efd";
-    selectedDates.push(formatted);
-  }
+            if(selectedDates.includes(formatted)){
+              cell.style.backgroundColor = "#0d6efd";
+            }
 
-  const subtotal = selectedDates.length * precioPorDia;
-  totalSpan.textContent = (subtotal*1.08).toFixed(2);
-});
+            cell.addEventListener('click', () => {
+              if(selectedDates.includes(formatted)){
+                selectedDates = selectedDates.filter(d => d !== formatted);
+                cell.style.backgroundColor = "#28a745";
+              } else {
+                selectedDates.push(formatted);
+                cell.style.backgroundColor = "#0d6efd";
+              }
+
+              const subtotal = selectedDates.length * precioPorDia;
+              totalSpan.textContent = (subtotal * 1.08).toFixed(2);
+            });
 
           } else {
-            cell.style.backgroundColor="#dc3545";
-            cell.style.color="#fff";
-            cell.style.cursor="not-allowed";
+            cell.style.backgroundColor = "#dc3545";
+            cell.style.color = "#fff";
+            cell.style.cursor = "not-allowed";
           }
         }
 
         date++;
       }
+
       row.appendChild(cell);
     }
+
     calendarBody.appendChild(row);
   }
 }
 
-prevMonthBtn.addEventListener('click', ()=>{
+prevMonthBtn.addEventListener('click', () => {
   currentMonth--;
-  if(currentMonth<0){ currentMonth=11; currentYear--; }
-  renderCalendar(currentMonth,currentYear);
+  if(currentMonth < 0){
+    currentMonth = 11;
+    currentYear--;
+  }
+  renderCalendar(currentMonth, currentYear);
 });
-nextMonthBtn.addEventListener('click', ()=>{
+
+nextMonthBtn.addEventListener('click', () => {
   currentMonth++;
-  if(currentMonth>11){ currentMonth=0; currentYear++; }
-  renderCalendar(currentMonth,currentYear);
+  if(currentMonth > 11){
+    currentMonth = 0;
+    currentYear++;
+  }
+  renderCalendar(currentMonth, currentYear);
 });
 
-renderCalendar(currentMonth,currentYear);
+renderCalendar(currentMonth, currentYear);
 
-document.getElementById('contratar-btn').addEventListener('click', ()=>{
-  if(selectedDates.length===0){
+document.getElementById('contratar-btn').addEventListener('click', () => {
+  if(selectedDates.length === 0){
     alert("Seleccione al menos un día para continuar.");
     return;
   }
 
   const subtotal = selectedDates.length * precioPorDia;
-  const totalConImpuestos = subtotal*1.08;
+  const totalConImpuestos = subtotal * 1.08;
+
+  if(!post.reservas) post.reservas = [];
+
+  const usuarioActual = localStorage.getItem('usuario_actual');
+
+  if(!usuarioActual){
+    alert("Debes iniciar sesión para continuar.");
+    window.location.href = "login.html";
+    return;
+  }
 
   // 1️⃣ Actualizar disponibilidad del post
   disponibilidadGuardada = disponibilidadGuardada.filter(d => !selectedDates.includes(d));
   post.disponibilidad = disponibilidadGuardada;
 
-  // 2️⃣ Guardar reservas del usuario (estado pendiente)
-if(!post.reservas) post.reservas = [];
+  const porcentajeComision = 0.08; // 8%
+  const montoPropietario = (precioPorDia * (1 - porcentajeComision)) * selectedDates.length;
 
-const usuarioActual = localStorage.getItem('usuario_actual');
-
-if(!usuarioActual){
-    alert("Debes iniciar sesión para publicar.");
-    window.location.href = "login.html";
-}
-
-const porcentajeComision = 0.08; // 8%
-const montoPropietario = (precioPorDia * (1 - porcentajeComision)) * selectedDates.length;
-
-const nuevaReserva = {
+  const nuevaReserva = {
     usuario: usuarioActual,
     fechas: [...selectedDates],
     monto: totalConImpuestos,
     montoPropietario: montoPropietario,
     estado: "pendiente",
     fechaCreacion: Date.now()
-};
+  };
 
-post.reservas.push(nuevaReserva);
+  post.reservas.push(nuevaReserva);
 
-// 3️⃣ Crear notificación para el propietario
-if(!post.notificaciones) post.notificaciones = [];
+  // 3️⃣ Crear notificación para el propietario
+  if(!post.notificaciones) post.notificaciones = [];
 
-const notificacion = {
+  const notificacion = {
     tipo: "reserva",
     usuario: usuarioActual,
     postTitulo: post.title,
@@ -420,13 +601,14 @@ const notificacion = {
     monto: montoPropietario,
     fecha: new Date().toISOString(),
     postIndex: index
-};
+  };
 
-post.notificaciones.push(notificacion);
+  post.notificaciones.push(notificacion);
 
-// 4️⃣ Guardar cambios en localStorage
-posts[index] = post;
-localStorage.setItem('localiar_posts', JSON.stringify(posts));
+  // 4️⃣ Guardar cambios en localStorage
+  posts[index] = post;
+  localStorage.setItem('localiar_posts', JSON.stringify(posts));
+
   // 5️⃣ Guardar información de la reserva para la página de pago
   localStorage.setItem('reserva_data', JSON.stringify({
     dias: selectedDates,
@@ -439,21 +621,21 @@ localStorage.setItem('localiar_posts', JSON.stringify(posts));
   }));
 
   // 6️⃣ Redirigir a pago
-  window.location.href="pago.html";
+  window.location.href = "pago.html";
 });
-
 
 const favoriteBtn = document.getElementById('favorite-btn');
 const usuarioActual = localStorage.getItem('usuario_actual');
-
-if(!usuarioActual){
-    alert("Debes iniciar sesión para publicar.");
-    window.location.href = "login.html";
-}
-const favoritosKey = `favoritos_${usuarioActual}`;
-let favoritos = JSON.parse(localStorage.getItem(favoritosKey) || '[]');
+const favoritosKey = usuarioActual ? `favoritos_${usuarioActual}` : null;
+let favoritos = favoritosKey ? JSON.parse(localStorage.getItem(favoritosKey) || '[]') : [];
 
 function actualizarCorazon() {
+  if(!usuarioActual){
+    favoriteBtn.classList.remove('favorito');
+    favoriteBtn.innerHTML = '&#9825;';
+    return;
+  }
+
   if(favoritos.includes(index)) {
     favoriteBtn.classList.add('favorito');
     favoriteBtn.innerHTML = '&#9829;';
@@ -463,21 +645,39 @@ function actualizarCorazon() {
   }
 }
 
-favoriteBtn.addEventListener('click', (e)=>{
+favoriteBtn.addEventListener('click', (e) => {
   e.stopPropagation();
+
+  if(!usuarioActual){
+    alert("Debes iniciar sesión para continuar.");
+    window.location.href = "login.html";
+    return;
+  }
+
   if(favoritos.includes(index)) {
-    favoritos = favoritos.filter(i=>i!==index);
+    favoritos = favoritos.filter(i => i !== index);
   } else {
     favoritos.push(index);
   }
+
   localStorage.setItem(favoritosKey, JSON.stringify(favoritos));
   actualizarCorazon();
 });
 
 actualizarCorazon();
 
+// 🔹 BOTÓN COMPARTIR POR WHATSAPP
+const shareBtn = document.getElementById("share-btn");
+
+shareBtn.addEventListener("click", () => {
+  const url = window.location.href;
+  const titulo = document.getElementById("title").textContent;
+  const mensaje = `Mira este espacio en Localiar:\n\n${titulo}\n${url}`;
+  const whatsappURL = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+  window.open(whatsappURL, "_blank");
+});
+
 // 🔹 PREGUNTAS
-// 🔹 PREGUNTAS Y COMENTARIOS DE VALORACIONES
 const preguntasList = document.getElementById('preguntas-list');
 const preguntaInput = document.getElementById('pregunta-input');
 const preguntaBtn = document.getElementById('pregunta-btn');
@@ -487,111 +687,125 @@ let preguntas = post.preguntas || [];
 
 // 🔹 Mostrar comentarios de valoraciones de inquilinos
 function renderValoracionesComentarios() {
-    // Eliminar div anterior si existe
-    const oldDiv = document.getElementById('valoraciones-comentarios');
-    if(oldDiv) oldDiv.remove();
+  const oldDiv = document.getElementById('valoraciones-comentarios');
+  if(oldDiv) oldDiv.remove();
 
-    if(post.valoracionesComentarios && post.valoracionesComentarios.length > 0){
-        const valoracionesDiv = document.createElement('div');
-        valoracionesDiv.id = 'valoraciones-comentarios';
-        valoracionesDiv.style.marginTop = "20px";
-        valoracionesDiv.style.padding = "10px";
-        valoracionesDiv.style.background = "#f9f9f9";
-        valoracionesDiv.style.borderRadius = "8px";
-        valoracionesDiv.innerHTML = "<h4>Comentarios de Valoraciones:</h4>";
+  if(post.valoracionesComentarios && post.valoracionesComentarios.length > 0){
+    const valoracionesDiv = document.createElement('div');
+    valoracionesDiv.id = 'valoraciones-comentarios';
+    valoracionesDiv.style.marginTop = "20px";
+    valoracionesDiv.style.padding = "10px";
+    valoracionesDiv.style.background = "#f9f9f9";
+    valoracionesDiv.style.borderRadius = "8px";
+    valoracionesDiv.innerHTML = "<h4>Comentarios de Valoraciones:</h4>";
 
-        post.valoracionesComentarios.slice().reverse().forEach(vc => {
-            const p = document.createElement('p');
-            const fecha = new Date(vc.fecha);
-            p.style.marginBottom = "5px";
-            p.innerHTML = `<strong>${vc.usuario}:</strong> ${vc.texto} <br>
-                           Estrellas: ${"★".repeat(vc.valoracion)}${"☆".repeat(5-vc.valoracion)}
-                           <span style="font-size:0.75em; color:#888;">(${fecha.toLocaleString()})</span>`;
-            valoracionesDiv.appendChild(p);
-        });
+    post.valoracionesComentarios.slice().reverse().forEach(vc => {
+      const p = document.createElement('p');
+      const fecha = new Date(vc.fecha);
+      p.style.marginBottom = "5px";
+      p.innerHTML = `<strong>${vc.usuario}:</strong> ${vc.texto} <br>
+                     Estrellas: ${"★".repeat(vc.valoracion)}${"☆".repeat(5-vc.valoracion)}
+                     <span style="font-size:0.75em; color:#888;">(${fecha.toLocaleString()})</span>`;
+      valoracionesDiv.appendChild(p);
+    });
 
-        preguntasContainer.appendChild(valoracionesDiv);
-    }
+    preguntasContainer.appendChild(valoracionesDiv);
+  }
 }
 
 function renderPreguntas() {
-    preguntasList.innerHTML = "";
+  preguntasList.innerHTML = "";
 
-    preguntas.slice().reverse().forEach((p, reversedIndex) => { 
-        const div = document.createElement('div');
-        div.classList.add('pregunta-item');
+  preguntas.slice().reverse().forEach((p, reversedIndex) => {
+    const div = document.createElement('div');
+    div.classList.add('pregunta-item');
 
-        const fechaPregunta = new Date(p.fecha);
-        div.innerHTML = `<p><strong>${p.usuario}:</strong> ${p.texto} <span class="timestamp">${fechaPregunta.toLocaleString()}</span></p>`;
-        
-        // Botón responder solo si eres el propietario y la pregunta no está respondida
-        if(usuarioActual === post.usuario && !p.respondida){
-            const btn = document.createElement('button');
-            btn.classList.add('respuesta-btn');
-            btn.textContent = "Responder";
-            btn.addEventListener('click', ()=>{
-                const respuesta = prompt("Escriba su respuesta:");
-                if(respuesta){
-                    p.respuesta = respuesta;
-                    p.respondida = true;
-                    p.fechaRespuesta = new Date().toISOString();
-                    localStorage.setItem('localiar_posts', JSON.stringify(posts));
-                    renderPreguntas();
-                }
-            });
-            div.appendChild(btn);
+    const fechaPregunta = new Date(p.fecha);
+    div.innerHTML = `<p><strong>${p.usuario}:</strong> ${p.texto} <span class="timestamp">${fechaPregunta.toLocaleString()}</span></p>`;
+
+    // Botón responder solo si eres el propietario y la pregunta no está respondida
+    if(usuarioActual === post.usuario && !p.respondida){
+      const btn = document.createElement('button');
+      btn.classList.add('respuesta-btn');
+      btn.textContent = "Responder";
+
+      btn.addEventListener('click', () => {
+        const respuesta = prompt("Escriba su respuesta:");
+        if(respuesta){
+          p.respuesta = respuesta;
+          p.respondida = true;
+          p.fechaRespuesta = new Date().toISOString();
+          posts[index] = post;
+          localStorage.setItem('localiar_posts', JSON.stringify(posts));
+          renderPreguntas();
         }
+      });
 
-        // Mostrar respuesta si existe
-        if(p.respuesta){
-            const fechaResp = new Date(p.fechaRespuesta);
-            const pResp = document.createElement('p');
-            pResp.style.marginLeft = "10px";
-            pResp.innerHTML = `<strong>Respuesta:</strong> ${p.respuesta} <span class="timestamp">${fechaResp.toLocaleString()}</span>`;
-            div.appendChild(pResp);
+      div.appendChild(btn);
+    }
+
+    // Mostrar respuesta si existe
+    if(p.respuesta){
+      const fechaResp = new Date(p.fechaRespuesta);
+      const pResp = document.createElement('p');
+      pResp.style.marginLeft = "10px";
+      pResp.innerHTML = `<strong>Respuesta:</strong> ${p.respuesta} <span class="timestamp">${fechaResp.toLocaleString()}</span>`;
+      div.appendChild(pResp);
+    }
+
+    // Botón eliminar solo propietario
+    if(usuarioActual === post.usuario){
+      const btnEliminar = document.createElement('button');
+      btnEliminar.classList.add('respuesta-btn');
+      btnEliminar.style.backgroundColor = "#dc3545";
+      btnEliminar.style.marginLeft = "5px";
+      btnEliminar.textContent = "Eliminar";
+
+      btnEliminar.addEventListener('click', () => {
+        if(confirm("¿Eliminar esta pregunta y su respuesta?")){
+          const originalIndex = preguntas.length - 1 - reversedIndex;
+          preguntas.splice(originalIndex, 1);
+          post.preguntas = preguntas;
+          posts[index] = post;
+          localStorage.setItem('localiar_posts', JSON.stringify(posts));
+          renderPreguntas();
         }
+      });
 
-        // Botón eliminar solo propietario
-        if(usuarioActual === post.usuario){
-            const btnEliminar = document.createElement('button');
-            btnEliminar.classList.add('respuesta-btn');
-            btnEliminar.style.backgroundColor = "#dc3545";
-            btnEliminar.style.marginLeft = "5px";
-            btnEliminar.textContent = "Eliminar";
+      div.appendChild(btnEliminar);
+    }
 
-            btnEliminar.addEventListener('click', () => {
-                if(confirm("¿Eliminar esta pregunta y su respuesta?")){
-                    const originalIndex = preguntas.length - 1 - reversedIndex;
-                    preguntas.splice(originalIndex, 1);
-                    post.preguntas = preguntas;
-                    posts[index] = post;
-                    localStorage.setItem('localiar_posts', JSON.stringify(posts));
-                    renderPreguntas();
-                }
-            });
-            div.appendChild(btnEliminar);
-        }
+    preguntasList.appendChild(div);
+  });
 
-        preguntasList.appendChild(div);
-    });
-
-    // 🔹 Mostrar comentarios de valoraciones de inquilinos
-    renderValoracionesComentarios();
-
-    // 🔹 Mostrar comentarios/valoraciones del propietario (opcional)
-    
+  renderValoracionesComentarios();
 }
 
 // Enviar nueva pregunta
-preguntaBtn.addEventListener('click', ()=>{
-    const texto = preguntaInput.value.trim();
-    if(!texto) return;
-    preguntas.push({usuario:usuarioActual, texto, respondida:false, fecha:new Date().toISOString()});
-    post.preguntas = preguntas;
-    posts[index] = post;
-    localStorage.setItem('localiar_posts', JSON.stringify(posts));
-    preguntaInput.value = "";
-    renderPreguntas();
+preguntaBtn.addEventListener('click', () => {
+  const usuarioActualPregunta = localStorage.getItem('usuario_actual');
+
+  if(!usuarioActualPregunta){
+    alert("Debes iniciar sesión para continuar.");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const texto = preguntaInput.value.trim();
+  if(!texto) return;
+
+  preguntas.push({
+    usuario: usuarioActualPregunta,
+    texto,
+    respondida:false,
+    fecha:new Date().toISOString()
+  });
+
+  post.preguntas = preguntas;
+  posts[index] = post;
+  localStorage.setItem('localiar_posts', JSON.stringify(posts));
+  preguntaInput.value = "";
+  renderPreguntas();
 });
 
 // Inicializar render
@@ -600,11 +814,18 @@ renderValoracionesComentarios();
 
 // Botón usuario activo
 const userActiveBtn = document.getElementById('user-active-btn');
-userActiveBtn.textContent = usuarioActual;
-userActiveBtn.addEventListener('click', ()=>{
-    window.location.href='usuario.html';
-});
 
+if(usuarioActual){
+  userActiveBtn.textContent = usuarioActual;
+  userActiveBtn.addEventListener('click', () => {
+    window.location.href='usuario.html';
+  });
+} else {
+  userActiveBtn.textContent = "Ingresar";
+  userActiveBtn.addEventListener('click', () => {
+    window.location.href='login.html';
+  });
+}
 </script>
 </body>
 </html>

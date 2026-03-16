@@ -1,151 +1,267 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pagar Reserva - Localiar</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    .pago-container {
-      max-width: 600px;
-      margin: 50px auto 50px;
-      padding: 20px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    .pago-container h2 { margin-bottom: 20px; }
-    .resumen p { margin: 8px 0; }
-    #pagar-btn {
-      background-color: #3483fa;
-      color: #fff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-top: 10px;
-    }
 
-    /* Nueva sección tarjeta */
-    .tarjeta-container { margin-top: 20px; }
-    .tarjeta-container label { display:block; margin:8px 0 4px; font-weight:600; }
-    .tarjeta-container input, .tarjeta-container select {
-      width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; margin-bottom:10px;
-    }
-    .cuotas-info { font-size:0.9em; color:#555; margin-bottom:10px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Pago de Reserva - Localiar</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+margin:0;
+}
+
+header{
+background:#3483fa;
+color:white;
+padding:15px;
+font-size:20px;
+}
+
+.container{
+max-width:600px;
+margin:auto;
+background:white;
+padding:20px;
+margin-top:40px;
+border-radius:8px;
+box-shadow:0 0 5px rgba(0,0,0,0.1);
+}
+
+.resumen p{
+margin:5px 0;
+}
+
+.total{
+font-size:20px;
+font-weight:bold;
+margin-top:15px;
+}
+
+select{
+padding:8px;
+width:100%;
+margin-top:10px;
+}
+
+button{
+margin-top:15px;
+padding:10px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+width:100%;
+font-weight:bold;
+}
+
+.btn-pagar{
+background:#3483fa;
+color:white;
+}
+
+.btn-transfer{
+background:#28a745;
+color:white;
+}
+
+.transfer-box{
+background:#f0f0f0;
+padding:15px;
+border-radius:6px;
+margin-top:15px;
+display:none;
+}
+
+input[type=file]{
+margin-top:10px;
+}
+
+</style>
+
 </head>
+
 <body>
-  <header class="header">
-    <div class="logo" style="cursor:pointer;" onclick="window.location.href='index.html'">Localiar</div>
-  </header>
 
-  <main class="pago-container">
-    <h2>Resumen de tu reserva</h2>
-    <div class="resumen">
-      <p><strong>Local:</strong> <span id="titulo"></span></p>
-      <p><strong>Días seleccionados:</strong> <span id="dias"></span></p>
-      <p><strong>Cantidad de días:</strong> <span id="cantidad-dias"></span></p>
-      <p><strong>Precio por día:</strong> $<span id="precio-dia"></span></p>
-      <p><strong>Subtotal:</strong> $<span id="subtotal"></span></p>
-      <p><strong>Garantía:</strong> $<span id="garantia"></span></p>
-      <p><strong>Total con impuestos:</strong> $<span id="total"></span></p>
-    </div>
+<header>Pago de Reserva</header>
 
-    <!-- Nueva sección: tarjeta de crédito y cuotas -->
-    <div class="tarjeta-container">
-      <h3>Datos de tarjeta de crédito</h3>
-      <label for="card-number">Número de tarjeta:</label>
-      <input type="text" id="card-number" placeholder="1234 5678 9012 3456">
+<div class="container">
 
-      <label for="card-name">Nombre en la tarjeta:</label>
-      <input type="text" id="card-name" placeholder="Juan Perez">
+<h2 id="titulo"></h2>
 
-      <label for="card-expiry">Fecha de vencimiento:</label>
-      <input type="month" id="card-expiry">
+<div class="resumen">
 
-      <label for="card-cvc">CVC:</label>
-      <input type="text" id="card-cvc" placeholder="123">
+<p><strong>Días reservados:</strong> <span id="dias"></span></p>
 
-      <label for="cuotas">Pagar en cuotas:</label>
-      <select id="cuotas">
-        <option value="1">1 cuota (sin interés)</option>
-        <option value="3">3 cuotas (5% interés)</option>
-        <option value="6">6 cuotas (10% interés)</option>
-        <option value="12">12 cuotas (20% interés)</option>
-      </select>
-      <p class="cuotas-info" id="cuotas-info">Total: $<span id="total-cuotas"></span></p>
-    </div>
+<p><strong>Precio por día:</strong> $<span id="precioDia"></span></p>
 
-    <button id="pagar-btn">Confirmar Pago</button>
-  </main>
+<p><strong>Subtotal alquiler:</strong> $<span id="subtotal"></span></p>
 
-  <script>
-    // Datos de reserva
-    const reservaData = JSON.parse(localStorage.getItem('reserva_data') || '{}');
-    const usuarioActual = localStorage.getItem('usuario_actual') || 'DemoUsuario';
+<p><strong>Comisión Localiar (8%):</strong> $<span id="comision"></span></p>
 
-    const tituloEl = document.getElementById('titulo');
-    const diasEl = document.getElementById('dias');
-    const cantidadDiasEl = document.getElementById('cantidad-dias');
-    const precioDiaEl = document.getElementById('precio-dia');
-    const subtotalEl = document.getElementById('subtotal');
-    const garantiaEl = document.getElementById('garantia');
-    const totalEl = document.getElementById('total');
-    const totalCuotasEl = document.getElementById('total-cuotas');
-    const cuotasSelect = document.getElementById('cuotas');
+<p><strong>Garantía reembolsable:</strong> $<span id="garantia"></span></p>
 
-    // Mostrar datos de reserva
-    tituloEl.textContent = reservaData.titulo || '';
-    diasEl.textContent = (reservaData.dias || []).join(', ');
-    cantidadDiasEl.textContent = reservaData.cantidadDias || 0;
-    precioDiaEl.textContent = reservaData.precioPorDia || 0;
-    subtotalEl.textContent = reservaData.subtotal?.toFixed(2) || 0;
-    garantiaEl.textContent = reservaData.garantia || 0;
-    totalEl.textContent = reservaData.total?.toFixed(2) || 0;
+<p class="total">Total a pagar: $<span id="total"></span></p>
 
-    // Función para calcular total según cuotas
-    function calcularTotalCuotas() {
-      let totalBase = reservaData.total || 0;
-      let interes = 0;
-      const cuotas = parseInt(cuotasSelect.value);
-      if(cuotas === 3) interes = 0.05;
-      if(cuotas === 6) interes = 0.10;
-      if(cuotas === 12) interes = 0.20;
-      const totalConInteres = totalBase * (1 + interes);
-      totalCuotasEl.textContent = totalConInteres.toFixed(2) + ` (${cuotas} cuota${cuotas>1?'s':''})`;
-    }
+</div>
 
-    cuotasSelect.addEventListener('change', calcularTotalCuotas);
-    calcularTotalCuotas();
+<h3>Elegir cuotas</h3>
 
-    document.getElementById('pagar-btn').addEventListener('click', () => {
-      // Validar tarjeta simple
-      const cardNumber = document.getElementById('card-number').value.trim();
-      const cardName = document.getElementById('card-name').value.trim();
-      const cardExpiry = document.getElementById('card-expiry').value;
-      const cardCvc = document.getElementById('card-cvc').value.trim();
-      if(!cardNumber || !cardName || !cardExpiry || !cardCvc){
-        alert("Por favor completa los datos de la tarjeta.");
-        return;
-      }
+<select id="cuotas">
 
-      // Guardar reserva asociada al usuario
-      const posts = JSON.parse(localStorage.getItem('localiar_posts') || '[]');
-      const postIndex = posts.findIndex(p => p.title === reservaData.titulo);
-      if(postIndex > -1){
-        if(!Array.isArray(posts[postIndex].reservas)) posts[postIndex].reservas = [];
-        reservaData.dias.forEach(d => {
-          posts[postIndex].reservas.push({ fecha: d, usuario: usuarioActual });
-        });
-        localStorage.setItem('localiar_posts', JSON.stringify(posts));
-      }
+<option value="1">1 cuota sin interés</option>
+<option value="3">3 cuotas (10% interés)</option>
+<option value="6">6 cuotas (20% interés)</option>
+<option value="12">12 cuotas (35% interés)</option>
 
-      alert(`Pago confirmado en ${cuotasSelect.value} cuota${cuotasSelect.value>1?'s':''}. Total: $${totalCuotasEl.textContent}`);
-      localStorage.removeItem('reserva_data');
-      window.location.href = 'usuario.html';
-    });
-  </script>
+</select>
+
+<p style="margin-top:10px;">
+Total con cuotas: <strong>$<span id="totalCuotas"></span></strong>
+</p>
+
+<button class="btn-pagar" id="btnMercadoPago">
+Pagar con Mercado Pago
+</button>
+
+<button class="btn-transfer" id="btnTransfer">
+Pagar por transferencia
+</button>
+
+<div class="transfer-box" id="transferBox">
+
+<p><strong>Alias:</strong> calulasas</p>
+
+<p><strong>CVU:</strong> 0000003100039047235359</p>
+
+<p style="font-size:14px;color:#555;">
+Después de realizar la transferencia adjunta el comprobante.
+</p>
+
+<p><strong>Adjuntar comprobante</strong></p>
+
+<input type="file" id="comprobantePago" accept="image/*,.pdf">
+
+<button id="confirmarTransfer">
+Enviar comprobante
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+const reserva = JSON.parse(localStorage.getItem("reserva_data"));
+
+if(!reserva){
+
+alert("No hay reserva para pagar");
+window.location.href="index.html";
+
+}
+
+const subtotal = reserva.subtotal;
+const comision = subtotal * 0.08;
+const garantia = reserva.garantia;
+const total = subtotal + comision + garantia;
+
+document.getElementById("titulo").textContent = reserva.titulo;
+document.getElementById("dias").textContent = reserva.dias.join(", ");
+document.getElementById("precioDia").textContent = reserva.precioPorDia;
+document.getElementById("subtotal").textContent = subtotal.toFixed(2);
+document.getElementById("comision").textContent = comision.toFixed(2);
+document.getElementById("garantia").textContent = garantia.toFixed(2);
+document.getElementById("total").textContent = total.toFixed(2);
+
+const cuotasSelect = document.getElementById("cuotas");
+const totalCuotasSpan = document.getElementById("totalCuotas");
+
+function calcularCuotas(){
+
+let cuotas = Number(cuotasSelect.value);
+
+let interes = 0;
+
+if(cuotas == 3) interes = 0.10;
+if(cuotas == 6) interes = 0.20;
+if(cuotas == 12) interes = 0.35;
+
+const totalFinal = total * (1 + interes);
+
+totalCuotasSpan.textContent = totalFinal.toFixed(2);
+
+}
+
+cuotasSelect.addEventListener("change", calcularCuotas);
+
+calcularCuotas();
+
+document.getElementById("btnMercadoPago").onclick = ()=>{
+
+alert("Serás redirigido a Mercado Pago para completar el pago.");
+
+window.open("https://www.mercadopago.com.ar","_blank");
+
+};
+
+document.getElementById("btnTransfer").onclick = ()=>{
+
+document.getElementById("transferBox").style.display="block";
+
+};
+
+document.getElementById("confirmarTransfer").onclick = ()=>{
+
+const fileInput = document.getElementById("comprobantePago");
+
+if(!fileInput.files.length){
+
+alert("Debes adjuntar el comprobante de pago");
+
+return;
+
+}
+
+const file = fileInput.files[0];
+
+const reader = new FileReader();
+
+reader.onload = function(e){
+
+const comprobante = e.target.result;
+
+let comprobantes = JSON.parse(localStorage.getItem("comprobantes_pagos") || "[]");
+
+comprobantes.push({
+
+fecha: new Date().toISOString(),
+titulo: reserva.titulo,
+dias: reserva.dias,
+monto: total,
+comprobante: comprobante
+
+});
+
+localStorage.setItem("comprobantes_pagos", JSON.stringify(comprobantes));
+
+alert("Comprobante enviado. Tu reserva quedará pendiente de verificación.");
+
+localStorage.removeItem("reserva_data");
+
+window.location.href="usuario.html";
+
+};
+
+reader.readAsDataURL(file);
+
+};
+
+</script>
+
 </body>
 </html>

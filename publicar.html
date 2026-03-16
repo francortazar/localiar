@@ -21,7 +21,7 @@
 
   <div class="publish-field">
     <label for="title">Título del local:</label>
-    <input type="text" id="title" placeholder="Ej: Local en Palermo para gimnasio">
+    <input type="text" id="title" maxlength="50" placeholder="Ej: Local en Palermo para gimnasio">
   </div>
 
   <div class="publish-field">
@@ -33,16 +33,22 @@
   <div class="publish-field">
     <label for="rubro">Rubro:</label>
     <select id="rubro">
-      <option value="gimnasio">Gimnasio</option>
-      <option value="peluqueria">Peluquería</option>
-      <option value="taller">Taller</option>
-      <option value="local-vacio">Local vacío</option>
-      <option value="gastronomia">Gastronomía</option>
-      <option value="indumentaria">Indumentaria</option>
-      <option value="feria americana">feria americana</option>
-      <option value="foodtruck">foodtruck</option>
-      <option value="fabrica">fabrica</option>
-    </select>
+<option value="deportes">Deportes</option>
+<option value="fabrica">fabrica</option>
+<option value="feria americana">feria americana</option>
+<option value="foodtruck">foodtruck</option>
+<option value="gastronomia">Gastronomía</option>
+<option value="gimnasio">Gimnasio</option>
+<option value="indumentaria">Indumentaria</option>
+<option value="local-vacio">Local vacío</option>
+<option value="peluqueria">Peluquería</option>
+<option value="salones infantiles">Salones infantiles</option>
+<option value="stand">Stand</option>
+<option value="taller">Taller</option>
+<option value="vehiculos">Vehiculos</option>
+<option value="venta en la via publica">Venta en la vía pública</option>
+<option value="viajes">Viajes</option>
+</select>
   </div>
 
   <div class="publish-field">
@@ -92,7 +98,7 @@
 
   <div class="publish-field">
     <label for="descripcion">Descripción breve:</label>
-    <textarea id="descripcion" rows="3" placeholder="Describe brevemente el local"></textarea>
+    <textarea id="descripcion" rows="3" maxlength="200" placeholder="Describe brevemente el local"></textarea>
   </div>
 
   <div class="publish-field">
@@ -122,7 +128,7 @@
 
   <!-- CALENDARIO OPCIONAL -->
   <div class="publish-field">
-    <h3>Selecciona los días de disponibilidad (opcional)</h3>
+    <h3>Selecciona los días de disponibilidad</h3>
     <div class="calendar-container">
       <div class="calendar-header">
         <button id="prev-month">&lt;</button>
@@ -490,15 +496,15 @@ submitBtn.addEventListener('click', async ()=>{
 
 if(postEditando){
     posts[editIndex] = nuevaData;
+    localStorage.setItem('localiar_posts', JSON.stringify(posts));
     alert("Publicación actualizada con éxito");
 } else {
     posts.push(nuevaData);
+    localStorage.setItem('localiar_posts', JSON.stringify(posts));
     alert("Publicación creada con éxito");
 }
 
-        localStorage.setItem('localiar_posts', JSON.stringify(posts));
-        alert("Publicación creada con éxito");
-        window.location.href='index.html';
+window.location.href='index.html';
 
     }catch(err){
         console.error(err);

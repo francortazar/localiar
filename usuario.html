@@ -98,6 +98,7 @@
 
 <script>
 const usuarioActual = localStorage.getItem('usuario_actual') || 'DemoUsuario';
+const users = JSON.parse(localStorage.getItem('localiar_users') || '[]');
 const userPostsList = document.getElementById('user-posts-list');
 const userReservasList = document.getElementById('user-reservas-list');
 const userFavoritosList = document.getElementById('user-favoritos-list');
@@ -109,6 +110,32 @@ const headerUserRating = document.getElementById('header-user-rating');
 headerUserBtn.textContent = usuarioActual;
 
 const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+// ==============================
+// LIMPIAR SOLO NOTIFICACIONES DE INICIO DE CONTRATO >48HS
+// ==============================
+
+function limpiarNotificacionesInicioContrato(){
+
+const notificacionesKey = `notificaciones_${usuarioActual}`;
+let notificaciones = JSON.parse(localStorage.getItem(notificacionesKey) || "[]");
+
+const ahora = Date.now();
+
+notificaciones = notificaciones.filter(n => {
+
+if(n.tipo !== "inicio_contrato") return true;
+
+const fecha = new Date(n.fecha).getTime();
+const diferenciaHoras = (ahora - fecha) / (1000*60*60);
+
+return diferenciaHoras < 48;
+
+});
+
+localStorage.setItem(notificacionesKey, JSON.stringify(notificaciones));
+
+}
 
 function formatDate(date) {
     const y = date.getFullYear();
@@ -281,13 +308,196 @@ star.style.marginRight = "2px";
         headerUserRating.appendChild(star);
     }
 }
+function normalizarFecha(fechaStr) {
+    const fecha = new Date(fechaStr);
+    fecha.setHours(0, 0, 0, 0);
+    return fecha;
+}
+
+function obtenerFechasReserva(reserva) {
+    return (reserva.fechas || (reserva.fecha ? [reserva.fecha] : []))
+        .map(f => normalizarFecha(f));
+}
+
+function publicacionSinInteraccion(post){
+
+    const hoy = new Date();
+    hoy.setHours(0,0,0,0);
+
+    // Revisar si tiene reservas futuras
+    if(post.reservas){
+
+        for(let r of post.reservas){
+
+            const fechas = r.fechas || [r.fecha];
+
+            for(let f of fechas){
+
+                const fechaReserva = new Date(f);
+                fechaReserva.setHours(0,0,0,0);
+
+                if(fechaReserva >= hoy){
+                    return false; // todavía hay algo con lo que interactuar
+                }
+
+            }
+
+        }
+
+    }
+
+    // Si llegó acá → no hay reservas futuras ni interacción posible
+    return true;
+
+}
+
+function verificarAvisoDesaparicion(post) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const fechasDisponibles = (post.fechasDisponibles || [])
+        .map(f => normalizarFecha(f))
+        .filter(f => f >= hoy);
+
+    let ultimaFecha = null;
+
+    if (fechasDisponibles.length > 0) {
+        ultimaFecha = fechasDisponibles.sort((a, b) => a - b)[fechasDisponibles.length - 1];
+    }
+
+    (post.reservas || []).forEach(reserva => {
+        const fechas = obtenerFechasReserva(reserva).filter(f => f >= hoy);
+        if (fechas.length > 0) {
+            const ultimaReserva = fechas.sort((a, b) => a - b)[fechas.length - 1];
+            if (!ultimaFecha || ultimaReserva > ultimaFecha) {
+                ultimaFecha = ultimaReserva;
+            }
+        }
+    });
+
+    if (!ultimaFecha) return false;
+
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
+
+    return ultimaFecha.getTime() === manana.getTime();
+}
+
+function notificarPropietarioDesaparicion(post) {
+    const clave = `notificacion_desaparicion_${post.id || post.title}_${post.usuario}`;
+
+    if (localStorage.getItem(clave)) return;
+
+    const notificaciones = JSON.parse(localStorage.getItem("localiar_notificaciones") || "[]");
+
+    notificaciones.push({
+        usuario: post.usuario,
+        tipo: "desaparicion_publicacion",
+        mensaje: `Tu publicación "${post.title}" dejará de mostrarse en 24 horas porque ya no tendrá fechas disponibles ni reservas futuras.`,
+        fecha: new Date().toISOString(),
+        leida: false
+    });
+
+    localStorage.setItem("localiar_notificaciones", JSON.stringify(notificaciones));
+    localStorage.setItem(clave, "true");
+}
+
+function mostrarNotificacionesUsuario() {
+    const usuarioActual = localStorage.getItem("usuario_actual");
+    if (!usuarioActual) return;
+
+    const notificaciones = JSON.parse(localStorage.getItem("localiar_notificaciones") || "[]");
+    let huboCambios = false;
+
+    notificaciones.forEach(n => {
+        if (n.usuario === usuarioActual && !n.leida) {
+            alert(n.mensaje);
+            n.leida = true;
+            huboCambios = true;
+        }
+    });
+
+    if (huboCambios) {
+        localStorage.setItem("localiar_notificaciones", JSON.stringify(notificaciones));
+    }
+}
 function cargarPublicacionesUsuario() {
+    
     const posts = JSON.parse(localStorage.getItem('localiar_posts') || '[]');
+    posts.forEach(post => {
+    if (verificarAvisoDesaparicion(post)) {
+        notificarPropietarioDesaparicion(post);
+    }
+});
+
+const postsVisibles = posts.filter(post => !publicacionSinInteraccion(post));
+    // ==============================
+// GENERAR NOTIFICACIONES 24HS ANTES
+// ==============================
+
+const notificacionesKey = `notificaciones_${usuarioActual}`;
+let notificacionesSistema = JSON.parse(localStorage.getItem(notificacionesKey) || "[]");
+
+posts.forEach(post=>{
+
+if(!post.reservas) return;
+
+post.reservas.forEach(r=>{
+
+if(r.estado !== "aceptada") return;
+
+const fechasOrdenadas = (r.fechas || [r.fecha]).sort();
+const inicio = new Date(fechasOrdenadas[0]);
+const hoy = new Date();
+
+inicio.setHours(0,0,0,0);
+hoy.setHours(0,0,0,0);
+
+const diferencia = (inicio - hoy)/(1000*60*60*24);
+
+if(diferencia === 1){
+
+const propietario = users.find(u=>u.username === post.usuario);
+const inquilino = users.find(u=>u.username === r.usuario);
+
+// NOTIFICACIÓN PARA INQUILINO
+if(r.usuario === usuarioActual){
+
+notificacionesSistema.push({
+
+tipo:"inicio_contrato",
+texto:`Mañana empieza tu proyecto en "${post.title}". Muchísimos éxitos!!! Comunicate con ${post.usuario} al tel ${propietario?.telefono || "-"}.`,
+fecha:new Date().toISOString()
+
+});
+
+}
+
+// NOTIFICACIÓN PARA PROPIETARIO
+if(post.usuario === usuarioActual){
+
+notificacionesSistema.push({
+
+tipo:"inicio_contrato",
+texto:`Mañana empieza tu contrato por "${post.title}" con ${r.usuario}. Comunicate al ${inquilino?.telefono || "-"}. Recordá valorar la experiencia para cobrar el contrato.`,
+fecha:new Date().toISOString()
+
+});
+
+}
+
+}
+
+});
+
+});
+
+localStorage.setItem(notificacionesKey, JSON.stringify(notificacionesSistema));
     userPostsList.innerHTML = "";
     userReservasList.innerHTML = "";
     userFavoritosList.innerHTML = "";
     userNotificacionesList.innerHTML = "";
-    const notificacionesKey = `notificaciones_${usuarioActual}`;
+    
     const notificaciones = JSON.parse(localStorage.getItem(notificacionesKey) || "[]");
 
 if(notificaciones.length === 0){
@@ -321,7 +531,7 @@ if(notificaciones.length === 0){
 }
 
 // PUBLICACIONES ACTIVAS
-posts.forEach((post, index) => {
+postsVisibles.forEach((post, index) => {
     if(post.usuario === usuarioActual){
         const div = document.createElement('div');
         div.classList.add('user-post-item');
@@ -332,8 +542,7 @@ posts.forEach((post, index) => {
             window.location.href = `publicacion.html?id=${index}`;
         });
 
-        const miniCalendar = crearMiniCalendario(post.disponibilidad || [], post.reservas || []);
-        div.appendChild(miniCalendar);
+        
         userPostsList.appendChild(div);
     }
 });
@@ -343,7 +552,7 @@ if(userPostsList.innerHTML === "") {
 }
 
 // MIS RESERVAS
-posts.forEach((post, index) => {
+postsVisibles.forEach((post, index) => {
     const reservas = normalizarReservas(post.reservas);
     const reservasUsuario = reservas.filter(r => r.usuario === usuarioActual);
     if(reservasUsuario.length > 0){
@@ -476,8 +685,7 @@ if(r.estado === "aceptada"){
             window.location.href = `publicacion.html?id=${index}`;
         });
 
-        const miniCalendar = crearMiniCalendario([], reservasUsuario, true);
-        div.appendChild(miniCalendar);
+        
         userReservasList.appendChild(div);
     }
 });
@@ -499,13 +707,12 @@ favoritos.forEach(idx => {
         window.location.href = `publicacion.html?id=${idx}`;
     });
 
-    const miniCalendar = crearMiniCalendario(post.disponibilidad || [], []);
-    div.appendChild(miniCalendar);
+    
     userFavoritosList.appendChild(div);
 });
 
 // 🔔 Notificaciones de preguntas y respuestas
-posts.forEach((post, index) => {
+postsVisibles.forEach((post, index) => {
     if(!post.preguntas) return;
     post.preguntas.forEach(p => {
         if(post.usuario === usuarioActual && p.usuario !== usuarioActual){
@@ -786,6 +993,77 @@ posts.forEach((post, index) => {
                 });
 
                 userValoracionesList.appendChild(div);
+                // BOTONES DE COBRO Y GARANTÍA
+if(r.fechaValoracionPropietario && !r.cobroSolicitado){
+
+const btnCobrar = document.createElement("button");
+btnCobrar.textContent = "Cobrar";
+btnCobrar.style.marginTop = "8px";
+btnCobrar.style.marginRight = "6px";
+btnCobrar.style.padding = "5px 10px";
+btnCobrar.style.backgroundColor = "#28a745";
+btnCobrar.style.color = "#fff";
+btnCobrar.style.border = "none";
+btnCobrar.style.borderRadius = "4px";
+btnCobrar.style.cursor = "pointer";
+
+div.appendChild(btnCobrar);
+
+btnCobrar.addEventListener("click", () => {
+
+    const montoFinal = r.montoPropietario.toFixed(2);
+
+    const confirmar = confirm(
+`El equipo de Localiar se va a poner en contacto contigo dentro de las próximas 24hs para hacer la transferencia de $${montoFinal}.
+
+¿Deseas continuar?`
+    );
+
+    if(!confirmar) return;
+
+    cobrar(r, post); // ← usa tu función cobrar
+});
+
+
+
+/* ==============================
+   BOTÓN GARANTÍA
+============================== */
+
+const btnGarantia = document.createElement("button");
+btnGarantia.textContent = "Garantía";
+btnGarantia.style.marginTop = "8px";
+btnGarantia.style.padding = "5px 10px";
+btnGarantia.style.backgroundColor = "#ffc107";
+btnGarantia.style.color = "#000";
+btnGarantia.style.border = "none";
+btnGarantia.style.borderRadius = "4px";
+btnGarantia.style.cursor = "pointer";
+
+div.appendChild(btnGarantia);
+
+
+btnGarantia.addEventListener("click", (e) => {
+
+    e.stopPropagation();
+
+    const confirmar = confirm("¿Estás seguro de ejecutar la garantía?");
+
+    if(!confirmar) return;
+
+    garantiaContext = {
+        post: post,
+        reserva: r
+    };
+
+    document.getElementById("garantia-comentario").value = "";
+    document.getElementById("garantia-imagenes").value = "";
+
+    garantiaModal.style.display = "flex";
+
+});
+
+}
             }
         });
     }
@@ -1015,8 +1293,9 @@ if(!reserva){
 }else{
 
     reserva.valoracionPropietario = valor;
-    reserva.comentarioPropietario = comentario;
-    reserva.valoradaPorPropietario = true;
+reserva.comentarioPropietario = comentario;
+reserva.valoradaPorPropietario = true;
+reserva.fechaValoracionPropietario = Date.now(); // ⬅️ guardamos momento de valoración
 
 }
 
@@ -1033,10 +1312,180 @@ if(!reserva){
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    cargarPublicacionesUsuario();    // Carga todo el contenido de usuario
-    renderizarEstrellasHeader();      // Dibuja las estrellas en el zócalo
+    mostrarNotificacionesUsuario();
+    cargarPublicacionesUsuario();
+    renderizarEstrellasHeader();
+});
+
+</script>
+<!-- Botón Soporte al final de la página -->
+<div style="text-align:center; margin: 30px 0;">
+  <button id="soporte-btn" 
+          style="
+            padding: 12px 25px; 
+            background-color: #3483fa; 
+            color: #fff; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+          ">
+    Soporte
+  </button>
+</div>
+
+<script>
+  const soporteBtn = document.getElementById('soporte-btn');
+
+  soporteBtn.addEventListener('click', () => {
+    // Pedimos email y contraseña
+    const email = prompt("Ingrese su email de administrador:");
+    if(!email) return;
+
+    const password = prompt("Ingrese su contraseña:");
+    if(!password) return;
+
+    // Tomamos todos los usuarios
+    const users = JSON.parse(localStorage.getItem('localiar_users') || '[]');
+
+    // Buscamos usuario con rol admin y que coincida email + password
+    const adminUser = users.find(u => u.email === email && u.password === password && u.role === "admin");
+
+    if(adminUser){
+      // Guardamos el admin actual por seguridad
+      localStorage.setItem('admin_actual', adminUser.username);
+      // Redirigimos a admin.html
+      window.location.href = 'admin.html';
+    } else {
+      alert("Email o contraseña incorrectos, o no tiene permisos de administrador.");
+    }
+  });
+  // Función que se llama cuando el propietario presiona "Cobrar"
+function cobrar(reserva, post) {
+
+    const montoAPagar = reserva.montoPropietario;
+
+    const confirmacion = confirm(`El equipo de Localiar se pondrá en contacto para transferirte $${montoAPagar.toFixed(2)}.
+
+¿Deseas continuar?`);
+
+    if(!confirmacion) return;
+
+    const users = JSON.parse(localStorage.getItem('localiar_users') || '[]');
+
+    const propietarioObj = users.find(u => u.username === post.usuario);
+    const inquilinoObj = users.find(u => u.username === reserva.usuario);
+
+    const cobroActual = {
+        fechaSolicitud: new Date().toISOString(),
+        propietario: post.usuario,
+        telefonoPropietario: propietarioObj ? propietarioObj.telefono : "",
+        emailPropietario: propietarioObj ? propietarioObj.email : "",
+        publicacion: post.title,
+        idPublicacion: post.id,
+        fechasAlquiler: reserva.fechas,
+        montoAPagar: montoAPagar,
+        inquilino: reserva.usuario,
+        telefonoInquilino: inquilinoObj ? inquilinoObj.telefono : "",
+        emailInquilino: inquilinoObj ? inquilinoObj.email : "",
+        montoPagado: reserva.monto,
+        fechaReserva: reserva.fechaReserva || reserva.fechas[0]
+    };
+
+    let cobros = JSON.parse(localStorage.getItem("cobros_pendientes") || "[]");
+    cobros.push(cobroActual);
+    localStorage.setItem("cobros_pendientes", JSON.stringify(cobros));
+
+    // 🔵 MARCAR QUE YA SE SOLICITÓ EL COBRO
+    reserva.cobroSolicitado = true;
+
+    const posts = JSON.parse(localStorage.getItem("localiar_posts") || "[]");
+
+    const postIndex = posts.findIndex(p => p.title === post.title && p.usuario === post.usuario);
+
+    if(postIndex !== -1){
+        const reservaIndex = posts[postIndex].reservas.findIndex(r =>
+            r.usuario === reserva.usuario &&
+            JSON.stringify(r.fechas) === JSON.stringify(reserva.fechas)
+        );
+
+        if(reservaIndex !== -1){
+            posts[postIndex].reservas[reservaIndex].cobroSolicitado = true;
+        }
+    }
+
+    localStorage.setItem("localiar_posts", JSON.stringify(posts));
+
+    alert("Solicitud de cobro enviada correctamente");
+
+    limpiarNotificacionesInicioContrato();
+cargarPublicacionesUsuario();
+}
+</script>
+<!-- Modal de Garantía -->
+<div id="garantia-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background-color:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:20px; border-radius:10px; max-width:400px; width:90%;">
+    <h3>Ejecutar Garantía</h3>
+    <p>Selecciona el motivo de la garantía:</p>
+    <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px;">
+      <label><input type="checkbox" value="Rotura"> Rotura</label>
+      <label><input type="checkbox" value="Robo"> Robo</label>
+      <label><input type="checkbox" value="Limpieza"> Limpieza</label>
+      <label><input type="checkbox" value="Usurpación"> Usurpación</label>
+      <label><input type="checkbox" value="Uso Incorrecto"> Uso Incorrecto</label>
+    </div>
+    <textarea id="garantia-comentario" placeholder="Escribe tu comentario..." style="width:100%; height:60px; margin-bottom:10px; padding:5px; border-radius:5px; border:1px solid #ccc;"></textarea>
+    <input type="file" id="garantia-imagenes" multiple style="margin-bottom:10px;">
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button id="garantia-cancel" style="padding:5px 10px;">Cancelar</button>
+      <button id="garantia-submit" style="padding:5px 10px; background:#28a745; color:#fff; border:none; border-radius:4px;">Enviar</button>
+    </div>
+  </div>
+</div>
+<script>
+const garantiaModal = document.getElementById('garantia-modal');
+const garantiaCancel = document.getElementById('garantia-cancel');
+const garantiaSubmit = document.getElementById('garantia-submit');
+
+let garantiaContext = null; // guarda referencia de la publicación/reserva
+
+// Cancelar garantía
+garantiaCancel.addEventListener('click', () => {
+    garantiaModal.style.display = 'none';
+});
+
+// Enviar garantía
+garantiaSubmit.addEventListener('click', () => {
+    const checkboxes = Array.from(garantiaModal.querySelectorAll('input[type=checkbox]:checked'));
+    if(checkboxes.length === 0){
+        alert("Selecciona al menos un motivo.");
+        return;
+    }
+    const motivos = checkboxes.map(c => c.value);
+    const comentario = document.getElementById('garantia-comentario').value.trim();
+    const imagenes = document.getElementById('garantia-imagenes').files;
+
+    // Guardamos todo en localStorage para admin
+    const garantiaData = {
+        motivos,
+        comentario,
+        imagenes: Array.from(imagenes).map(f => f.name), // solo nombres para simular
+        post: garantiaContext.post,
+        reserva: garantiaContext.reserva,
+        fecha: new Date().toISOString()
+    };
+
+    // Guardar en un array
+    const garantias = JSON.parse(localStorage.getItem('garantias') || '[]');
+    garantias.push(garantiaData);
+    localStorage.setItem('garantias', JSON.stringify(garantias));
+
+    alert("Garantía enviada correctamente.");
+    garantiaModal.style.display = 'none';
 });
 </script>
+
 
 </body>
 </html>

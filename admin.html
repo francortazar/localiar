@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Panel Admin - Localiar</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:0;
+background:#f4f4f4;
+}
+
+header{
+background:#3483fa;
+color:white;
+padding:15px;
+font-size:20px;
+}
+
+main{
+max-width:1300px;
+margin:auto;
+padding:20px;
+}
+
+h2{
+color:#3483fa;
+cursor:pointer;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+margin-bottom:30px;
+display:none;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #ddd;
+}
+
+th{
+background:#e9f0ff;
+}
+
+button{
+padding:5px 10px;
+border:none;
+border-radius:4px;
+cursor:pointer;
+}
+
+.btn-pagar{background:#28a745;color:white;}
+.btn-rechazar{background:#dc3545;color:white;}
+.btn-compensar{background:#ffc107;}
+.cardAdmin{
+
+background:white;
+padding:15px;
+border-radius:6px;
+box-shadow:0 0 5px rgba(0,0,0,0.1);
+width:180px;
+text-align:center;
+
+}
+
+.cardAdmin h3{
+
+margin:0;
+font-size:14px;
+color:#555;
+
+}
+
+.cardAdmin p{
+
+font-size:22px;
+font-weight:bold;
+color:#3483fa;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>Panel Administrador - Localiar</header>
+<div id="resumenAdmin" style="display:flex;gap:20px;padding:20px">
+
+<div class="cardAdmin">
+<h3>Reservas</h3>
+<p id="statReservas">0</p>
+</div>
+
+<div class="cardAdmin">
+<h3>Cobros pendientes</h3>
+<p id="statCobros">0</p>
+</div>
+
+<div class="cardAdmin">
+<h3>Garantías</h3>
+<p id="statGarantias">0</p>
+</div>
+
+<div class="cardAdmin">
+<h3>Total a pagar</h3>
+<p id="statMonto">$0</p>
+</div>
+
+</div>
+
+<main>
+
+<h2 data-target="tablaReservas">Todas las Reservas</h2>
+
+<table id="tablaReservas">
+
+<thead>
+
+<tr>
+
+<th>Publicación</th>
+<th>Propietario</th>
+<th>Inquilino</th>
+<th>Fechas</th>
+<th>Monto pagado</th>
+<th>Monto propietario</th>
+<th>Estado</th>
+
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<h2 data-target="tablaCobros">Cobros Pendientes</h2>
+
+<table id="tablaCobros">
+
+<thead>
+
+<tr>
+
+<th>Fecha solicitud</th>
+<th>Propietario</th>
+<th>Telefono</th>
+<th>Email</th>
+<th>Publicación</th>
+<th>Fechas</th>
+<th>Inquilino</th>
+<th>Monto a pagar</th>
+<th>Acciones</th>
+
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+
+<h2 data-target="tablaGarantias">Garantías Pendientes</h2>
+
+<table id="tablaGarantias">
+
+<thead>
+
+<tr>
+
+<th>Fecha</th>
+<th>Propietario</th>
+<th>Publicación</th>
+<th>Motivos</th>
+<th>Comentario</th>
+<th>Imágenes</th>
+<th>Acciones</th>
+
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<h2 data-target="tablaPagosVerificar">Pagos a Verificar</h2>
+
+<table id="tablaPagosVerificar">
+
+<thead>
+
+<tr>
+
+<th>Fecha</th>
+<th>Publicación</th>
+<th>Días</th>
+<th>Monto</th>
+<th>Comprobante</th>
+<th>Acciones</th>
+
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<h2 data-target="tablaPagos">Pagos Realizados</h2>
+
+<table id="tablaPagos">
+
+<thead>
+
+<tr>
+
+<th>Fecha pago</th>
+<th>Propietario</th>
+<th>Publicación</th>
+<th>Inquilino</th>
+<th>Monto</th>
+
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<h2 data-target="tablaReservasRevision">Reservas en Revisión</h2>
+
+<table id="tablaReservasRevision">
+
+<thead>
+
+<tr>
+
+<th>Inquilino</th>
+<th>Telefono</th>
+<th>Publicación</th>
+<th>Monto</th>
+<th>Comprobante</th>
+<th>Acciones</th>
+
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<h2 data-target="tablaGarantiasResueltas">Garantías Resueltas</h2>
+
+<table id="tablaGarantiasResueltas">
+
+<thead>
+
+<tr>
+
+<th>Fecha</th>
+<th>Propietario</th>
+<th>Publicación</th>
+<th>Resultado</th>
+
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</main>
+
+<script>
+
+let users = JSON.parse(localStorage.getItem("localiar_users") || "[]");
+let posts = JSON.parse(localStorage.getItem("localiar_posts") || "[]");
+// =====================
+// CONTROL DE ACCESO ADMIN
+// =====================
+
+const usuarioActual = localStorage.getItem("usuario_actual");
+
+if(!usuarioActual){
+alert("Debes iniciar sesión");
+window.location.href = "login.html";
+}
+
+const usuarioObj = users.find(u => u.username === usuarioActual);
+
+if(!usuarioObj || usuarioObj.rol !== "admin"){
+alert("No tienes permisos para acceder al panel administrador");
+window.location.href = "index.html";
+}
+
+let garantias = JSON.parse(localStorage.getItem("garantias") || "[]");
+
+let pagosRealizados = JSON.parse(localStorage.getItem("pagos_realizados") || "[]");
+
+let garantiasResueltas = JSON.parse(localStorage.getItem("garantias_resueltas") || "[]");
+let comprobantesPagos = JSON.parse(localStorage.getItem("comprobantes_pagos") || "[]");
+
+let reservasRevision = JSON.parse(localStorage.getItem("reservas_revision") || "[]");
+
+
+function renderCobros(){
+
+const tbody = document.querySelector("#tablaCobros tbody");
+
+tbody.innerHTML="";
+
+posts.forEach(post=>{
+
+post.reservas?.forEach(reserva=>{
+
+const fechaSolicitud = reserva.fechaSolicitud || reserva.fechas?.[0];
+
+if(reserva.estado === "pagado" || reserva.estadoPago === "pagado") return;
+
+const propietario = users.find(u=>u.username===post.usuario) || {};
+const inquilino = users.find(u=>u.username===reserva.usuario) || {};
+
+const tr = document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>${new Date(fechaSolicitud).toLocaleDateString()}</td>
+
+<td>${post.usuario}</td>
+
+<td>${propietario.telefono || "-"}</td>
+
+<td>${propietario.email || "-"}</td>
+
+<td>${post.title}</td>
+
+<td>${Array.isArray(reserva.fechas) ? reserva.fechas.join(", ") : reserva.fecha || "-"}</td>
+
+<td>${reserva.usuario}</td>
+
+<td>$${reserva.montoPropietario}</td>
+
+<td>
+
+<button class="btn-pagar">Pagar</button>
+
+</td>
+
+`;
+
+tr.querySelector(".btn-pagar").onclick=()=>{
+
+if(!confirm("Confirmar transferencia?")) return;
+reserva.estado="pagado";
+reserva.estadoPago="pagado";
+
+
+pagosRealizados.push({
+
+fecha:new Date().toISOString(),
+propietario:post.usuario,
+publicacion:post.title,
+inquilino:reserva.usuario,
+monto:reserva.montoPropietario
+
+});
+
+localStorage.setItem("localiar_posts",JSON.stringify(posts));
+localStorage.setItem("pagos_realizados",JSON.stringify(pagosRealizados));
+
+renderCobros();
+renderPagos();
+actualizarResumen();
+
+};
+
+tbody.appendChild(tr);
+
+});
+
+});
+
+}
+
+
+function renderGarantias(){
+
+const tbody = document.querySelector("#tablaGarantias tbody");
+
+tbody.innerHTML="";
+
+garantias.forEach((g,i)=>{
+
+if(g.estado==="resuelta") return;
+
+const tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>${new Date(g.fecha).toLocaleDateString()}</td>
+
+<td>${g.post.usuario}</td>
+
+<td>${g.post.title}</td>
+
+<td>${g.motivos.join(", ")}</td>
+
+<td>${g.comentario}</td>
+
+<td>${g.imagenes.length}</td>
+
+<td>
+
+<button class="btn-rechazar">Rechazar</button>
+
+<button class="btn-compensar">Compensar</button>
+
+</td>
+
+`;
+
+tr.querySelector(".btn-rechazar").onclick=()=>{
+
+g.estado="resuelta";
+
+garantiasResueltas.push({
+
+fecha:new Date().toISOString(),
+propietario:g.post.usuario,
+publicacion:g.post.title,
+resultado:"rechazada"
+
+});
+
+localStorage.setItem("garantias",JSON.stringify(garantias));
+localStorage.setItem("garantias_resueltas",JSON.stringify(garantiasResueltas));
+
+renderGarantias();
+renderGarantiasResueltas();
+actualizarResumen(); // ← AQUI
+
+};
+
+tr.querySelector(".btn-compensar").onclick=()=>{
+
+g.estado="resuelta";
+
+garantiasResueltas.push({
+
+fecha:new Date().toISOString(),
+propietario:g.post.usuario,
+publicacion:g.post.title,
+resultado:"compensada"
+
+});
+
+localStorage.setItem("garantias",JSON.stringify(garantias));
+localStorage.setItem("garantias_resueltas",JSON.stringify(garantiasResueltas));
+
+renderGarantias();
+renderGarantiasResueltas();
+actualizarResumen(); // ← AQUI
+
+};
+
+tbody.appendChild(tr);
+
+});
+
+}
+
+
+function renderPagos(){
+
+const tbody = document.querySelector("#tablaPagos tbody");
+
+tbody.innerHTML="";
+
+pagosRealizados.forEach(p=>{
+
+const tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>${new Date(p.fecha).toLocaleDateString()}</td>
+
+<td>${p.propietario}</td>
+
+<td>${p.publicacion}</td>
+
+<td>${p.inquilino}</td>
+
+<td>$${p.monto}</td>
+
+`;
+
+tbody.appendChild(tr);
+
+});
+
+}
+function renderPagosVerificar(){
+
+const tbody = document.querySelector("#tablaPagosVerificar tbody");
+
+tbody.innerHTML="";
+
+comprobantesPagos.forEach((p,i)=>{
+
+const tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>${new Date(p.fecha).toLocaleDateString()}</td>
+
+<td>${p.titulo}</td>
+
+<td>${p.dias.join(", ")}</td>
+
+<td>$${p.monto}</td>
+
+<td>
+<button>Ver</button>
+</td>
+
+<td>
+
+<button class="btn-pagar">Confirmar</button>
+
+<button class="btn-rechazar">Denunciar</button>
+
+</td>
+
+`;
+
+tr.children[4].querySelector("button").onclick=()=>{
+
+window.open(p.comprobante);
+
+};
+
+tr.querySelector(".btn-pagar").onclick=()=>{
+
+if(!confirm("Confirmar esta reserva?")) return;
+
+/* buscar publicación */
+
+const post = posts.find(p => p.title === p.titulo);
+
+if(!post){
+alert("Publicación no encontrada");
+return;
+}
+
+/* crear reserva */
+
+const nuevaReserva = {
+
+usuario: "pendiente",
+fechas: p.dias,
+montoPagado: p.monto,
+montoPropietario: p.monto * 0.92,
+estado: "confirmada",
+fechaSolicitud: new Date().toISOString()
+
+};
+
+/* crear array si no existe */
+
+if(!post.reservas) post.reservas=[];
+
+post.reservas.push(nuevaReserva);
+
+/* guardar */
+
+localStorage.setItem("localiar_posts",JSON.stringify(posts));
+
+/* eliminar comprobante */
+
+comprobantesPagos.splice(i,1);
+
+localStorage.setItem("comprobantes_pagos",JSON.stringify(comprobantesPagos));
+
+alert("Reserva confirmada correctamente");
+
+/* refrescar */
+
+renderPagosVerificar();
+renderReservas();
+
+};
+
+tr.querySelector(".btn-rechazar").onclick=()=>{
+
+reservasRevision.push(p);
+
+localStorage.setItem("reservas_revision",JSON.stringify(reservasRevision));
+
+comprobantesPagos.splice(i,1);
+
+localStorage.setItem("comprobantes_pagos",JSON.stringify(comprobantesPagos));
+
+renderPagosVerificar();
+renderReservasRevision();
+
+};
+
+tbody.appendChild(tr);
+
+});
+
+}
+
+
+function renderGarantiasResueltas(){
+
+const tbody = document.querySelector("#tablaGarantiasResueltas tbody");
+
+tbody.innerHTML="";
+
+garantiasResueltas.forEach(g=>{
+
+const tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>${new Date(g.fecha).toLocaleDateString()}</td>
+
+<td>${g.propietario}</td>
+
+<td>${g.publicacion}</td>
+
+<td>${g.resultado}</td>
+
+`;
+
+tbody.appendChild(tr);
+
+});
+
+}
+function renderReservasRevision(){
+
+const tbody = document.querySelector("#tablaReservasRevision tbody");
+
+tbody.innerHTML="";
+
+reservasRevision.forEach((r,i)=>{
+
+const tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>-</td>
+
+<td>-</td>
+
+<td>${r.titulo}</td>
+
+<td>$${r.monto}</td>
+
+<td><button>Ver</button></td>
+
+<td>
+
+<button class="btn-pagar">Confirmar</button>
+<button class="btn-rechazar">Eliminar</button>
+
+</td>
+
+`;
+
+tr.children[4].querySelector("button").onclick=()=>{
+
+window.open(r.comprobante);
+
+};
+
+tr.querySelector(".btn-pagar").onclick=()=>{
+
+if(!confirm("Confirmar reserva?")) return;
+
+const post = posts.find(p => p.title === r.titulo);
+
+if(!post){
+alert("Publicación no encontrada");
+return;
+}
+
+const nuevaReserva = {
+
+usuario: "pendiente",
+fechas: r.dias,
+montoPagado: r.monto,
+montoPropietario: r.monto * 0.92,
+estado: "confirmada",
+fechaSolicitud: new Date().toISOString()
+
+};
+
+if(!post.reservas) post.reservas=[];
+
+post.reservas.push(nuevaReserva);
+
+localStorage.setItem("localiar_posts",JSON.stringify(posts));
+
+reservasRevision.splice(i,1);
+
+localStorage.setItem("reservas_revision",JSON.stringify(reservasRevision));
+
+alert("Reserva confirmada");
+
+renderReservasRevision();
+renderReservas();
+
+};
+
+tr.querySelector(".btn-rechazar").onclick=()=>{
+
+if(!confirm("Eliminar reserva?")) return;
+
+reservasRevision.splice(i,1);
+
+localStorage.setItem("reservas_revision",JSON.stringify(reservasRevision));
+
+renderReservasRevision();
+
+};
+
+tbody.appendChild(tr);
+
+});
+
+}
+function renderReservas(){
+
+const tbody = document.querySelector("#tablaReservas tbody");
+
+tbody.innerHTML="";
+
+posts.forEach(post=>{
+
+post.reservas?.forEach(reserva=>{
+
+const tr = document.createElement("tr");
+
+const propietario = users.find(u=>u.username===post.usuario) || {};
+const inquilino = users.find(u=>u.username===reserva.usuario) || {};
+
+const fechas = Array.isArray(reserva.fechas)
+? reserva.fechas.join(", ")
+: reserva.fecha || "-";
+
+const estado = reserva.estado || "pendiente";
+
+tr.innerHTML=`
+
+<td>${post.title}</td>
+
+<td>${post.usuario}</td>
+
+<td>${reserva.usuario}</td>
+
+<td>${fechas}</td>
+
+<td>$${reserva.montoPagado || 0}</td>
+
+<td>$${reserva.montoPropietario || 0}</td>
+
+<td>${estado}</td>
+
+`;
+
+tbody.appendChild(tr);
+
+});
+
+});
+
+}
+function actualizarResumen(){
+
+let reservas = 0;
+let cobros = 0;
+let monto = 0;
+
+posts.forEach(post=>{
+
+post.reservas?.forEach(reserva=>{
+
+reservas++;
+
+if(reserva.estado !== "pagado"){
+
+cobros++;
+
+monto += Number(reserva.montoPropietario || 0);
+
+}
+
+});
+
+});
+
+document.getElementById("statReservas").textContent = reservas;
+document.getElementById("statCobros").textContent = cobros;
+document.getElementById("statGarantias").textContent = garantias.filter(g=>g.estado!=="resuelta").length;
+document.getElementById("statMonto").textContent = "$"+monto;
+
+}
+
+
+document.querySelectorAll("h2").forEach(titulo=>{
+
+titulo.addEventListener("click",()=>{
+
+const tabla=document.getElementById(titulo.dataset.target);
+
+tabla.style.display = tabla.style.display==="table" ? "none":"table";
+
+});
+
+});
+
+renderReservas();
+renderCobros();
+renderGarantias();
+renderPagos();
+renderPagosVerificar();
+renderReservasRevision();
+renderGarantiasResueltas();
+actualizarResumen();
+
+
+</script>
+
+</body>
+</html>

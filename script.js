@@ -209,3 +209,17 @@ searchInput.addEventListener('keyup',(e)=>{
 
 renderCalendar(currentMonth,currentYear);
 loadPosts();
+/* ================= MOBILE FILTER ================= */
+
+const mobileFilterBtn = document.getElementById("mobile-filter-btn");
+const sidebar = document.querySelector(".sidebar");
+
+if(mobileFilterBtn){
+
+    mobileFilterBtn.addEventListener("click", ()=>{
+
+        sidebar.classList.toggle("open");
+
+    });
+
+}
