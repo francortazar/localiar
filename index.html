@@ -18,12 +18,12 @@
   </div>
 
   <div class="user-actions">
-    <button id="user-btn" class="user-btn" onclick="window.location.href='usuario.html'">Usuario</button>
-    <button class="publish-btn" onclick="window.location.href='publicar.html'">Publicar</button>
+  <button id="user-btn" class="user-btn">Usuario</button>
+  <button class="publish-btn" id="publish-btn">Publicar</button>
 
-    <button id="mobile-filters-btn" class="mobile-filters-btn">
-        ☰
-    </button>
+  <button id="mobile-filters-btn" class="mobile-filters-btn">
+      ☰
+  </button>
 </div>
 </header>
 
@@ -181,9 +181,39 @@ let selectedDates = JSON.parse(localStorage.getItem("filtro_fechas") || "[]");
 let horaD = 0;
 let horaH = 24;
 
-const usuarioActual = localStorage.getItem('usuario_actual') || 'DemoUsuario';
-document.getElementById('user-btn').textContent = usuarioActual;
+const usuarioActual = localStorage.getItem('usuario_actual');
+const userBtn = document.getElementById('user-btn');
+// BOTÓN USUARIO
+if(usuarioActual){
+    userBtn.textContent = usuarioActual;
+} else {
+    userBtn.textContent = "Iniciar sesión";
+}
 
+userBtn.addEventListener('click', () => {
+    if(usuarioActual){
+        window.location.href = 'usuario.html';
+    } else {
+        window.location.href = 'login.html';
+    }
+});
+
+// BOTÓN PUBLICAR
+const publishBtn = document.getElementById('publish-btn');
+
+publishBtn.addEventListener('click', () => {
+    if(!usuarioActual){
+        alert("Tenés que iniciar sesión para publicar");
+        return;
+    }
+    window.location.href = 'publicar.html';
+});
+
+if(usuarioActual){
+    userBtn.textContent = usuarioActual;
+} else {
+    userBtn.textContent = "Iniciar sesión";
+}
 // Función auxiliar para convertir "HH:MM" a número decimal
 function horaDecimal(horaStr){
     const [h,m] = horaStr.split(':').map(Number);
@@ -409,7 +439,12 @@ if(post.usuario !== usuarioActual){
     valBtn.style.marginLeft = '10px';
 
     valBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // evitar redirección al click de la card
+    e.stopPropagation();
+
+    if(!usuarioActual){
+        alert("Tenés que iniciar sesión para valorar");
+        return;
+    }
         valoracionLocalContext = index; // guardamos índice del post
         
         valoracionLocalTitle.textContent = `Valorar Local: ${post.title}`;
@@ -420,9 +455,14 @@ if(post.usuario !== usuarioActual){
 }
 
         card.addEventListener('click', ()=>{
-            localStorage.setItem('ver_post_index', index);
-            window.location.href='publicacion.html';
-        });
+    if(!usuarioActual){
+        alert("Tenés que iniciar sesión para ver esta publicación");
+        return;
+    }
+
+    localStorage.setItem('ver_post_index', index);
+    window.location.href='publicacion.html';
+});
 
         card.appendChild(img);
         card.appendChild(h4);
