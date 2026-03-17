@@ -7,31 +7,18 @@
 <link rel="stylesheet" href="style.css">
 
 <style>
-  body {
-    background: #ffe600; /* TODO amarillo */
-    font-family: Arial, sans-serif;
-  }
-
   .login-container {
     max-width: 400px;
-    margin: 60px auto;
+    margin: 80px auto;
     padding: 20px;
-    background: #ffe600; /* fondo amarillo también */
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  }
-
-  .login-container h1 {
-    text-align: center;
-    color: #000; /* Localiar en negro */
-    font-size: 2em;
-    margin-bottom: 10px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
   }
 
   .login-container h2 {
     text-align:center;
     margin-bottom:20px;
-    color: #000;
   }
 
   .login-field {
@@ -42,7 +29,6 @@
     display:block;
     margin-bottom:5px;
     font-weight:600;
-    color: #000;
   }
 
   .login-field input {
@@ -50,7 +36,6 @@
     padding:8px;
     border-radius:6px;
     border:1px solid #ccc;
-    background: #fff; /* campos de datos siguen blancos */
   }
 
   #login-btn {
@@ -77,18 +62,17 @@
   #terms-container {
     max-height: 200px;
     overflow-y: auto;
-    border: none;
+    border:1px solid #ccc;
+    border-radius:6px;
     padding:10px;
     margin-bottom:10px;
-    background: #ffe600; /* TODO amarillo */
+    background:#f9f9f9;
     font-size:0.85em;
-    color: #000;
   }
 
   #accept-terms {
     margin-right:5px;
   }
-
 </style>
 </head>
 
@@ -96,7 +80,6 @@
 
 <div class="login-container">
 
-  <h1>Localiar</h1>
   <h2 id="form-title">Iniciar Sesión</h2>
 
   <div class="login-field">
@@ -120,11 +103,6 @@
     <div class="login-field">
       <label for="birthdate">Fecha de nacimiento</label>
       <input type="date" id="birthdate">
-    </div>
-
-    <div class="login-field">
-      <label for="phone">Teléfono</label>
-      <input type="tel" id="phone" placeholder="Ej: 123456789">
     </div>
 
   </div>

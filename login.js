@@ -13,7 +13,6 @@ loginBtn.addEventListener('click', () => {
     const password = document.getElementById('password').value;
     const username = document.getElementById('username')?.value.trim();
     const birthdate = document.getElementById('birthdate')?.value;
-    const telefono = document.getElementById('phone')?.value.trim(); // 🔹 nuevo campo
 
     if(!email || !password){
         alert("Completa todos los campos obligatorios");
@@ -32,7 +31,7 @@ loginBtn.addEventListener('click', () => {
     // =========================
     if(modoRegistro){
 
-        if(!username || !birthdate || !telefono){ // 🔹 validación teléfono
+        if(!username || !birthdate){
             alert("Completa todos los campos para registrarte");
             return;
         }
@@ -45,21 +44,14 @@ loginBtn.addEventListener('click', () => {
             return alert("Este nombre de usuario ya está en uso");
         }
 
-        if(users.some(u => u.telefono === telefono)){
-            return alert("Este teléfono ya está registrado");
-        }
-
-        // 🔹 Asignación de rol: "admin" solo para adminfrancisco@localiar.com
-       const nuevoUsuario = {
-    username,
-    email,
-    password,
-    birthdate,
-    telefono, 
-    valoracion: 5,
-    reservas: [],
-    role: email === "adminfrancisco@localiar.com" ? "admin" : "user"
-};
+        const nuevoUsuario = {
+            username,
+            email,
+            password,
+            birthdate,
+            valoracion: 5, // valoración inicial
+            reservas: []
+        };
 
         users.push(nuevoUsuario);
         localStorage.setItem('localiar_users', JSON.stringify(users));
@@ -74,14 +66,10 @@ loginBtn.addEventListener('click', () => {
     // =========================
     // MODO LOGIN
     // =========================
-    const user = users.find(u => (u.email === email || u.telefono === email) && u.password === password);
-    // 🔹 login por email o teléfono
+    const user = users.find(u => u.email === email && u.password === password);
 
     if(user){
-        // 🔹 Guardamos el usuario y su rol en localStorage
         localStorage.setItem('usuario_actual', user.username);
-        localStorage.setItem('rol_usuario_actual', user.role); // <-- clave para verificar admin
-        localStorage.setItem('telefono_usuario_actual', user.telefono); // 🔹 guardamos teléfono
         alert("Login exitoso");
         window.location.href = 'index.html';
     } else {
@@ -113,8 +101,6 @@ function activarModoRegistro(){
     loginBtn.textContent = "Registrarme";
     registerLink.textContent = "¿Ya tienes cuenta? Inicia sesión";
     extraFields.style.display = "block";
-
-    
 }
 
 function activarModoLogin(){
