@@ -1333,9 +1333,25 @@ document.addEventListener("DOMContentLoaded", () => {
           ">
     Soporte
   </button>
+  <button id="logout-btn" style="
+  margin-top:5px;
+  font-size:12px;
+  background:none;
+  border:none;
+  color:#666;
+  cursor:pointer;
+">
+  Cerrar sesión
+</button>
 </div>
 
 <script>
+    const logoutBtn = document.getElementById('logout-btn');
+
+logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('usuario_actual');
+    window.location.href = 'index.html';
+});
   const soporteBtn = document.getElementById('soporte-btn');
 
   soporteBtn.addEventListener('click', () => {
