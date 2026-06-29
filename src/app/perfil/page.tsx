@@ -109,43 +109,44 @@ async function cancelarReserva(
 }
 
 async function valorarReserva(
-  
   operacionId: string,
   publicationId: string,
   puntuacion: number
 ) {
-  console.log(
-    "VALORANDO",
-    operacionId,
-    publicationId,
-    puntuacion);
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) return;
 
-  const { error } =
+  const { data: publicacion, error: pubError } =
     await supabase
-      .from("reviews")
-      .insert({
-        operacion_id:
-          operacionId,
-        publication_id:
-          publicationId,
-        usuario_id: user.id,
-        puntuacion,
-      });
+      .from("publications")
+      .select("owner_id")
+      .eq("id", publicationId)
+      .single();
+
+  if (pubError) {
+    alert(pubError.message);
+    return;
+  }
+
+  const { error } = await supabase.from("reviews").insert({
+    operacion_id: operacionId,
+    publication_id: publicationId,
+    usuario_id: user.id,
+    from_user_id: user.id,
+    to_user_id: publicacion.owner_id,
+    type: "renter_to_owner",
+    puntuacion,
+  });
 
   if (error) {
     alert(error.message);
     return;
   }
 
-  alert(
-    "Gracias por tu valoración."
-  );
-
+  alert("Gracias por tu valoración.");
   cargarMisReservas();
 }
 
@@ -322,36 +323,33 @@ function PublicacionReservas({
   precio: number;
 }) {
   const [reservas, setReservas] = useState<any[]>([]);
-  async function cancelarReservaComoAnfitrion(
-  operacionId: string,
-  fecha: string
-) {
-  const confirmar = confirm(
-    "¿Cancelar esta fecha de la reserva?"
-  );
-
-  if (!confirmar) return;
-
-  const { error } = await supabase
-    .from("reservations")
-    .delete()
-    .eq("operacion_id", operacionId)
-    .eq("fecha", fecha);
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  await cargar();
-
-  alert("Fecha cancelada correctamente.");
-}
   const [precioDia, setPrecioDia] = useState(0);
 
   useEffect(() => {
     cargar();
   }, [publicacionId]);
+
+  async function cancelarReservaComoAnfitrion(
+    operacionId: string,
+    fecha: string
+  ) {
+    const confirmar = confirm("¿Cancelar esta fecha de la reserva?");
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from("reservations")
+      .delete()
+      .eq("operacion_id", operacionId)
+      .eq("fecha", fecha);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await cargar();
+    alert("Fecha cancelada correctamente.");
+  }
 
   async function cargar() {
     const { data } = await supabase
@@ -359,17 +357,16 @@ function PublicacionReservas({
       .select("*")
       .eq("publication_id", publicacionId)
       .neq("estado", "cancelada");
-      const { data: publicacion } = await supabase
-  .from("publications")
-  .select("precio_dia")
-  .eq("id", publicacionId)
-  .single();
+
+    const { data: publicacion } = await supabase
+      .from("publications")
+      .select("precio_dia")
+      .eq("id", publicacionId)
+      .single();
 
     if (!data) return;
 
     setPrecioDia(Number(publicacion?.precio_dia || 0));
-
-    console.log(data);
 
     const resultado = await Promise.all(
       data.map(async (r) => {
@@ -379,46 +376,36 @@ function PublicacionReservas({
           .eq("id", r.inquilino_id)
           .single();
 
-          const { data: publicacion } = await supabase
-  .from("publications")
-  .select("precio_dia")
-  .eq("id", publicacionId)
-  .single();
-
         return {
-  operacion_id: r.operacion_id,
-  fecha: r.fecha,
-  nombre: perfil?.nombre,
-  telefono: perfil?.telefono,
-  precio_dia: Number(publicacion?.precio_dia || 0),
-};
+          operacion_id: r.operacion_id,
+          fecha: r.fecha,
+          nombre: perfil?.nombre,
+          telefono: perfil?.telefono,
+          precio_dia: Number(publicacion?.precio_dia || 0),
+        };
       })
     );
 
     const agrupadas: any = {};
 
-resultado.forEach((r) => {
-  if (!agrupadas[r.operacion_id]) {
-    agrupadas[r.operacion_id] = {
-      operacion_id: r.operacion_id,
-      nombre: r.nombre,
-      telefono: r.telefono,
-      precio_dia: r.precio_dia,
-      fechas: [],
-    };
-  }
+    resultado.forEach((r) => {
+      if (!agrupadas[r.operacion_id]) {
+        agrupadas[r.operacion_id] = {
+          operacion_id: r.operacion_id,
+          nombre: r.nombre,
+          telefono: r.telefono,
+          precio_dia: r.precio_dia,
+          fechas: [],
+        };
+      }
 
-  agrupadas[r.operacion_id].fechas.push(r.fecha);
-});
-
-console.log(Object.values(agrupadas));
+      agrupadas[r.operacion_id].fechas.push(r.fecha);
+    });
 
     setReservas(Object.values(agrupadas));
   }
 
   if (!reservas.length) return null;
-
-  
 
   return (
     <div style={{ marginTop: "10px" }}>
