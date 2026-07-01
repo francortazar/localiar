@@ -13,12 +13,17 @@ export default function PerfilPage() {
   const [favoritos, setFavoritos] = useState<any[]>([]);
   const router = useRouter();
   const [usuario, setUsuario] = useState<any>(null);
+  const [historialPublicaciones, setHistorialPublicaciones] = useState<any[]>([]);
+  const [closuresHistorial, setClosuresHistorial] = useState<string[]>([]);
+
+  // NO bloquear render
 
   useEffect(() => {
   cargarUsuario();
   cargarMisReservas();
   cargarMisPublicaciones();
   cargarFavoritos();
+  cargarHistorialPublicaciones();
 }, []);
 
 async function cargarFavoritos() {
@@ -136,8 +141,8 @@ async function valorarReserva(
     publication_id: publicationId,
     usuario_id: user.id,
     from_user_id: user.id,
-    to_user_id: publicacion.owner_id,
-    type: "renter_to_owner",
+    to_user_id: null,
+    type: "renter_to_publication",
     puntuacion,
   });
 
@@ -157,6 +162,8 @@ async function cargarMisReservas() {
   } = await supabase.auth.getUser();
 
   if (!user) return;
+
+  
 
   const { data: reservas } = await supabase
     .from("reservations")
@@ -201,6 +208,8 @@ async function cargarMisReservas() {
       .eq("id", operacion.publication_id)
       .single();
 
+     
+
     if (!publicacion) continue;
 
     const { data: anfitrion } = await supabase
@@ -232,15 +241,14 @@ const { data: review } =
   await supabase
     .from("reviews")
     .select("id, puntuacion")
-    .eq(
-      "operacion_id",
-      operacion.operacion_id
-    )
+    .eq("operacion_id", operacion.operacion_id)
+    .eq("type", "renter_to_publication")
     .maybeSingle();
 
     
 
 resultado.push({
+ 
   ...operacion,
   publicacion,
   anfitrion,
@@ -250,11 +258,11 @@ resultado.push({
   ultimaFecha,
   reservaFinalizada,
 
-  reviewRealizada:
-    !!review,
+  
+reviewRealizada: !!review,
+puntuacion: review?.puntuacion ?? null,
 
-  puntuacion:
-    review?.puntuacion || null,
+
 });
   }
 
@@ -284,6 +292,72 @@ async function cargarMisPublicaciones() {
   console.log(data);
 }
 
+async function cargarHistorialPublicaciones() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data, error } = await supabase
+    .from("reviews")
+    .select(`
+      id,
+      operacion_id,
+      puntuacion,
+      publication_id,
+      to_user_id,
+      
+      publications (
+        titulo
+      )
+    `)
+    .eq("from_user_id", user.id)
+    .eq("type", "owner_to_renter")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+  console.log(error);
+  alert(JSON.stringify(error));
+  return;
+}
+
+
+
+const { data: actions } = await supabase
+  .from("owner_actions")
+  .select("operacion_id, action")
+  .eq("owner_id", user.id);
+
+  
+
+  const actionsSet = new Set(
+  (actions || [])
+    .filter((a: any) => a.action === "ok")
+    .map((a: any) => a.operacion_id)
+);
+
+const historial = await Promise.all(
+  (data || []).map(async (r: any) => {
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("nombre")
+      .eq("id", r.to_user_id)
+      .single();
+
+    return {
+  ...r,
+  nombreInquilino: perfil?.nombre,
+  todoOk: actionsSet.has(r.operacion_id),
+};
+  })
+);
+
+setHistorialPublicaciones(historial);
+
+  
+}
+
   async function cerrarSesion() {
   await supabase.auth.signOut();
 
@@ -298,7 +372,7 @@ async function cargarUsuario() {
 
   const { data } = await supabase
     .from("profiles")
-    .select("nombre")
+    .select("id, nombre")
     .eq("id", user.id)
     .single();
 
@@ -311,23 +385,112 @@ const reservasActivas = misReservas.filter(
   (r) => !r.reviewRealizada
 );
 
-const historial = misReservas.filter(
-  (r) => r.reviewRealizada
-);
+const historial = misReservas.filter((r) => r.reviewRealizada);
 
 function PublicacionReservas({
   publicacionId,
   precio,
+  ownerId,
 }: {
   publicacionId: string;
   precio: number;
+  ownerId: string;
 }) {
   const [reservas, setReservas] = useState<any[]>([]);
+  const [closures, setClosures] = useState<any[]>([]);
+  if (!ownerId) {
+  return <div style={{ color: "#888" }}>Cargando...</div>;
+}
+
+  const tieneClosureActivo = (operacionId: string) =>
+  closures.some((c) => c.operacion_id === operacionId);
+
+ 
+
+  async function valorarInquilinoComoDueno(
+  operacionId: string,
+publicationId: string,
+inquilinoId: string,
+puntuacion: number
+) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { error } = await supabase
+  .from("reviews")
+  .insert({
+  operacion_id: operacionId,
+
+  publication_id: publicationId,
+
+  usuario_id: user.id,
+
+  from_user_id: user.id,
+  to_user_id: inquilinoId,
+
+  type: "owner_to_renter",
+
+  puntuacion,
+});
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  alert("Valoración enviada.");
+
+  await cargar();
+}
   const [precioDia, setPrecioDia] = useState(0);
 
+  
+
+async function handleClosure(
+  operacionId: string,
+  decision: "ok" | "claim"
+) {
+  const exists = closures.find(
+    (c) => c.operacion_id === operacionId
+  );
+
+  if (exists) return;
+
+  const { data: { user } } =
+    await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { error } = await supabase
+    .from("operation_closures")
+    .insert({
+      operacion_id: operacionId,
+      owner_id: user.id,
+      decision,
+      status: "resolved",
+      expires_at: new Date(
+        Date.now() + 24 * 60 * 60 * 1000
+      ).toISOString(),
+    });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  await cargar();
+  setReservas((prev) =>
+  prev.filter((r) => r.operacion_id !== operacionId)
+);
+}
+
   useEffect(() => {
-    cargar();
-  }, [publicacionId]);
+  if (!ownerId || !publicacionId) return;
+  cargar();
+}, [publicacionId, ownerId]);
 
   async function cancelarReservaComoAnfitrion(
     operacionId: string,
@@ -352,58 +515,96 @@ function PublicacionReservas({
   }
 
   async function cargar() {
-    const { data } = await supabase
-      .from("reservations")
-      .select("*")
-      .eq("publication_id", publicacionId)
-      .neq("estado", "cancelada");
+    
+  console.log("OWNER ID:", ownerId);
 
-    const { data: publicacion } = await supabase
-      .from("publications")
-      .select("precio_dia")
-      .eq("id", publicacionId)
-      .single();
+  if (!ownerId || !publicacionId) return;
+  if (!ownerId) return;
 
-    if (!data) return;
+  const { data } = await supabase
+    .from("reservations")
+    .select("*")
+    .eq("publication_id", publicacionId)
+    .neq("estado", "cancelada");
 
-    setPrecioDia(Number(publicacion?.precio_dia || 0));
+  console.log("RESERVAS ENCONTRADAS:", data);
 
-    const resultado = await Promise.all(
-      data.map(async (r) => {
-        const { data: perfil } = await supabase
-          .from("profiles")
-          .select("nombre, telefono")
-          .eq("id", r.inquilino_id)
-          .single();
+  const { data: publicacion } = await supabase
+  .from("publications")
+  .select("precio_dia, titulo")
+  .eq("id", publicacionId)
+  .single();
 
-        return {
-          operacion_id: r.operacion_id,
-          fecha: r.fecha,
-          nombre: perfil?.nombre,
-          telefono: perfil?.telefono,
-          precio_dia: Number(publicacion?.precio_dia || 0),
-        };
-      })
-    );
+  const { data: closuresData } = await supabase
+    .from("operation_closures")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .gte("expires_at", new Date().toISOString());
 
-    const agrupadas: any = {};
+    const closuresSet = new Set(
+  (closuresData || []).map((c: any) => c.operacion_id)
+);
 
-    resultado.forEach((r) => {
-      if (!agrupadas[r.operacion_id]) {
-        agrupadas[r.operacion_id] = {
-          operacion_id: r.operacion_id,
-          nombre: r.nombre,
-          telefono: r.telefono,
-          precio_dia: r.precio_dia,
-          fechas: [],
-        };
-      }
+  setClosures(closuresData || []);
 
-      agrupadas[r.operacion_id].fechas.push(r.fecha);
-    });
+  if (!data) return;
 
-    setReservas(Object.values(agrupadas));
-  }
+  setPrecioDia(Number(publicacion?.precio_dia || 0));
+
+  const resultado = await Promise.all(
+    data.map(async (r) => {
+      const { data: perfil } = await supabase
+        .from("profiles")
+        .select("nombre, telefono")
+        .eq("id", r.inquilino_id)
+        .single();
+
+      const ultimaFecha = r.fecha;
+
+      const reservaFinalizada =
+        new Date(ultimaFecha + "T23:59:59") < new Date();
+
+      
+
+      return {
+        operacion_id: r.operacion_id,
+        publicacion_titulo: publicacion?.titulo,
+        fecha: r.fecha,
+        nombre: perfil?.nombre,
+        telefono: perfil?.telefono,
+        precio_dia: Number(publicacion?.precio_dia || 0),
+        inquilino_id: r.inquilino_id,
+        reservaFinalizada,
+        
+        confirmedByOwner: false,
+      };
+    })
+  );
+
+  const agrupadas: any = {};
+
+  resultado.forEach((r) => {
+    if (!agrupadas[r.operacion_id]) {
+      agrupadas[r.operacion_id] = {
+        operacion_id: r.operacion_id,
+        nombre: r.nombre,
+        telefono: r.telefono,
+        precio_dia: r.precio_dia,
+        inquilino_id: r.inquilino_id,
+        reservaFinalizada: r.reservaFinalizada,
+        
+        fechas: [],
+      };
+    }
+
+    agrupadas[r.operacion_id].fechas.push(r.fecha);
+  });
+
+  const final = Object.values(agrupadas) as any[];
+
+setReservas(final);
+
+}
 
   if (!reservas.length) return null;
 
@@ -425,7 +626,17 @@ fechaPago.setDate(fechaPago.getDate() + 2);
 
 const fechaCobro =
   fechaPago.toLocaleDateString("es-AR");
-        
+        console.log({
+  operacion: r.operacion_id,
+  reservaFinalizada: r.reservaFinalizada,
+  reviewRealizada: r.reviewRealizada,
+});
+console.log("CHECK BOTÓN:", {
+    operacion: r.operacion_id,
+    reservaFinalizada: r.reservaFinalizada,
+    reviewOwnerRealizada: r.reviewOwnerRealizada,
+    closures: closures?.map(c => c.operacion_id),
+  });
 
         return (
           <div
@@ -463,6 +674,17 @@ const totalCobro =
 const ultimaFecha = [...r.fechas]
   .sort()
   .at(-1)!;
+
+  const reservaFinalizada =
+  new Date(ultimaFecha + "T23:59:59") < new Date();
+
+  
+
+console.log({
+  operacion: r.operacion_id,
+  ultimaFecha,
+  reservaFinalizada,
+});
 
 const fechaPago = new Date(ultimaFecha);
 fechaPago.setDate(fechaPago.getDate() + 2);
@@ -527,6 +749,41 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
     {fechaCobro}
   </div>
 </div>
+
+
+
+{r.reservaFinalizada && !r.reviewOwnerRealizada && (
+  <div style={{ marginTop: "15px" }}>
+    <p>
+      <strong>Valorá al inquilino</strong>
+    </p>
+
+    <div
+      style={{
+        display: "flex",
+        gap: "8px",
+        fontSize: "28px",
+      }}
+    >
+      {[1, 2, 3, 4, 5].map((estrella) => (
+        <span
+          key={estrella}
+          style={{ cursor: "pointer" }}
+          onClick={() =>
+            valorarInquilinoComoDueno(
+  r.operacion_id,
+  publicacionId,
+  r.inquilino_id,
+  estrella
+)
+          }
+        >
+          ☆
+        </span>
+      ))}
+    </div>
+  </div>
+)}
 
 </div>
 </div>
@@ -595,13 +852,7 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
         </p>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "15px",
-        }}
-      >
+      
         <div
   style={{
     background: "#111111",
@@ -802,13 +1053,15 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
       marginBottom: "20px",
     }}
   >
-    Historial
+    Historial de mis Reservas
   </h2>
 
   {historial.length === 0 ? (
     <p>No tenés operaciones finalizadas.</p>
   ) : (
-    historial.map((reserva) => (
+    historial
+  .filter(r => r.reviewRealizada || r.reviewOwnerRealizada)
+  .map((reserva) => (
       <div
         key={reserva.operacion_id}
         style={{
@@ -838,6 +1091,8 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
   <strong>
     Fechas utilizadas:
   </strong>
+
+  
 
   {reserva.fechas
     .sort()
@@ -915,11 +1170,123 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
         <PublicacionReservas
   publicacionId={pub.publication_id}
   precio={pub.precio}
+  ownerId={usuario?.id}
 />
       </div>
     ))
   )}
+
+  
 </div>
+
+<div
+  style={{
+    background: "#111111",
+    borderRadius: "16px",
+    padding: "20px",
+    marginTop: "20px",
+  }}
+>
+  <h2
+    style={{
+      color: "#FF7A00",
+      marginBottom: "20px",
+    }}
+  >
+    Historial de mis publicaciones
+  </h2>
+
+  {historialPublicaciones.length === 0 ? (
+  <p>No tenés valoraciones todavía.</p>
+) : (
+  <>
+    {historialPublicaciones.map((r) => (
+      <div
+        key={r.id}
+        style={{
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          paddingBottom: "15px",
+          marginBottom: "15px",
+        }}
+      >
+        <p>
+          Valoraste con{" "}
+          <strong>{"★".repeat(r.puntuacion)}</strong> a{" "}
+          <strong>{r.nombreInquilino}</strong> por el uso de{" "}
+          <strong>{r.publications?.titulo}</strong>
+        </p>
+
+        {!r.todoOk && (
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              marginTop: "15px",
+            }}
+          >
+            <button
+              onClick={async () => {
+                const {
+                  data: { user },
+                } = await supabase.auth.getUser();
+
+                if (!user) return;
+
+                const { error } = await supabase
+                  .from("owner_actions")
+                  .insert({
+                    operacion_id: r.operacion_id,
+                    owner_id: user.id,
+                    action: "ok",
+                  });
+
+                if (error) {
+                  console.log(error);
+                  return;
+                }
+
+                setHistorialPublicaciones((prev) =>
+  prev.map((item) =>
+    item.operacion_id === r.operacion_id
+      ? { ...item, todoOk: true }
+      : item
+  )
+);
+              }}
+              style={{
+                flex: 1,
+                background: "#198754",
+                color: "white",
+                border: "none",
+                borderRadius: "10px",
+                padding: "10px",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Todo OK
+            </button>
+
+            <button
+              style={{
+                flex: 1,
+                background: "#C62828",
+                color: "white",
+                border: "none",
+                borderRadius: "10px",
+                padding: "10px",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Cobrar monto de resguardo
+            </button>
+          </div>
+        )}
+      </div>
+    ))}
+  </>
+)}
 
 
 
