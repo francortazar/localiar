@@ -13,8 +13,18 @@ export default function PerfilPage() {
   const [favoritos, setFavoritos] = useState<any[]>([]);
   const router = useRouter();
   const [usuario, setUsuario] = useState<any>(null);
+  const [promedioRating, setPromedioRating] = useState<number>(0);
   const [historialPublicaciones, setHistorialPublicaciones] = useState<any[]>([]);
   const [closuresHistorial, setClosuresHistorial] = useState<string[]>([]);
+  const [cantidadOperaciones, setCantidadOperaciones] = useState(0);
+
+  async function recargarPerfil() {
+  await Promise.all([
+    cargarMisReservas(),
+    cargarMisPublicaciones(),
+    cargarHistorialPublicaciones(),
+  ]);
+}
 
   // NO bloquear render
 
@@ -163,7 +173,14 @@ async function cargarMisReservas() {
 
   if (!user) return;
 
-  
+  const { data: ocultas } = await supabase
+  .from("hidden_notifications")
+  .select("review_id")
+  .eq("user_id", user.id);
+
+const ocultasSet = new Set(
+  (ocultas || []).map((o: any) => o.review_id)
+);
 
   const { data: reservas } = await supabase
     .from("reservations")
@@ -261,12 +278,17 @@ resultado.push({
   
 reviewRealizada: !!review,
 puntuacion: review?.puntuacion ?? null,
+reviewId: review?.id ?? null,
 
 
 });
   }
 
-  setMisReservas(resultado);
+  const resultadoFiltrado = resultado.filter(
+  (r: any) => !ocultasSet.has(r.reviewId)
+);
+
+setMisReservas(resultadoFiltrado);
 }
 
 async function cargarMisPublicaciones() {
@@ -289,6 +311,30 @@ async function cargarMisPublicaciones() {
   }
 
   setMisPublicaciones(data || []);
+
+  const publicacionesConRating = await Promise.all(
+  (data || []).map(async (pub: any) => {
+    const { data: reviews } = await supabase
+      .from("reviews")
+      .select("puntuacion")
+      .eq("publication_id", pub.publication_id)
+      .eq("type", "renter_to_publication");
+
+    const promedio =
+      reviews && reviews.length > 0
+        ? reviews.reduce((acc, r) => acc + r.puntuacion, 0) /
+          reviews.length
+        : 0;
+
+    return {
+      ...pub,
+      promedioRating: promedio,
+      cantidadReviews: reviews?.length || 0,
+    };
+  })
+);
+
+setMisPublicaciones(publicacionesConRating);
   console.log(data);
 }
 
@@ -298,6 +344,15 @@ async function cargarHistorialPublicaciones() {
   } = await supabase.auth.getUser();
 
   if (!user) return;
+
+  const { data: ocultas } = await supabase
+  .from("hidden_notifications")
+  .select("review_id")
+  .eq("user_id", user.id);
+
+const ocultasSet = new Set(
+  (ocultas || []).map((o: any) => o.review_id)
+);
 
   const { data, error } = await supabase
     .from("reviews")
@@ -329,12 +384,17 @@ const { data: actions } = await supabase
   .select("operacion_id, action")
   .eq("owner_id", user.id);
 
-  
+  const { data: claims } = await supabase
+  .from("owner_claims")
+  .select("operacion_id")
+  .eq("owner_id", user.id);
 
   const actionsSet = new Set(
-  (actions || [])
-    .filter((a: any) => a.action === "ok")
-    .map((a: any) => a.operacion_id)
+  (actions || []).map((a: any) => String(a.operacion_id))
+);
+
+const claimsSet = new Set(
+  (claims || []).map((c: any) => String(c.operacion_id))
 );
 
 const historial = await Promise.all(
@@ -345,15 +405,36 @@ const historial = await Promise.all(
       .eq("id", r.to_user_id)
       .single();
 
+    const { data: reservas } = await supabase
+  .from("reservations")
+  .select("fecha")
+  .eq("operacion_id", r.operacion_id)
+  .order("fecha", { ascending: false })
+  .limit(1);
+
+const fechaFinalizacion =
+  reservas && reservas.length > 0
+    ? reservas[0].fecha
+    : null;
+
     return {
   ...r,
   nombreInquilino: perfil?.nombre,
-  todoOk: actionsSet.has(r.operacion_id),
+  fechaFinalizacion,
+  todoOk: actionsSet.has(r.operacion_id) === true,
+pendiente: claimsSet.has(r.operacion_id) === true,
 };
   })
 );
 
-setHistorialPublicaciones(historial);
+const historialFiltrado = historial.filter(
+  (r: any) => !ocultasSet.has(r.id)
+);
+
+console.log("HISTORIAL IDS:", historial.map((r: any) => r.id));
+console.log("OCULTAS IDS:", [...ocultasSet]);
+
+setHistorialPublicaciones(historialFiltrado);
 
   
 }
@@ -370,6 +451,7 @@ async function cargarUsuario() {
 
   if (!user) return;
 
+  // PERFIL
   const { data } = await supabase
     .from("profiles")
     .select("id, nombre")
@@ -379,6 +461,29 @@ async function cargarUsuario() {
   if (data) {
     setUsuario(data);
   }
+
+  // RATING COMO INQUILINO (solo este caso)
+  const { data: reviews } = await supabase
+    .from("reviews")
+    .select("puntuacion")
+    .eq("to_user_id", user.id)
+    .eq("type", "owner_to_renter");
+
+  const promedio =
+    reviews && reviews.length > 0
+      ? reviews.reduce((acc, r) => acc + r.puntuacion, 0) /
+        reviews.length
+      : 0;
+
+  setPromedioRating(promedio);
+
+  // CANTIDAD DE OPERACIONES (inquilino)
+  const { data: reservas } = await supabase
+    .from("reservations")
+    .select("operacion_id")
+    .eq("inquilino_id", user.id);
+
+  setCantidadOperaciones(reservas?.length || 0);
 }
 
 const reservasActivas = misReservas.filter(
@@ -443,9 +548,31 @@ puntuacion: number
 
   alert("Valoración enviada.");
 
-  await cargar();
+  await recargarPerfil();
 }
   const [precioDia, setPrecioDia] = useState(0);
+  const reputacionCache = new Map<string, { promedio: number; cantidad: number }>();
+
+  const getReputacionInquilino = async (inquilinoId: string) => {
+  const { data: reviews } = await supabase
+    .from("reviews")
+    .select("puntuacion")
+    .eq("to_user_id", inquilinoId)
+    .eq("type", "owner_to_renter");
+
+  const safeReviews = reviews ?? [];
+
+  const cantidad = safeReviews.length;
+
+  const promedio =
+    cantidad > 0
+      ? safeReviews.reduce((acc: number, r: any) => {
+          return acc + (r.puntuacion ?? 0);
+        }, 0) / cantidad
+      : 0;
+
+  return { promedio, cantidad };
+};
 
   
 
@@ -481,7 +608,7 @@ async function handleClosure(
     return;
   }
 
-  await cargar();
+  await recargarPerfil();
   setReservas((prev) =>
   prev.filter((r) => r.operacion_id !== operacionId)
 );
@@ -550,9 +677,24 @@ async function handleClosure(
   if (!data) return;
 
   setPrecioDia(Number(publicacion?.precio_dia || 0));
-
+  const reputacionCache = new Map();
   const resultado = await Promise.all(
     data.map(async (r) => {
+
+      let rep = reputacionCache.get(r.inquilino_id);
+
+if (!rep) {
+  const nuevaRep = await getReputacionInquilino(r.inquilino_id);
+  rep = {
+    promedio: nuevaRep.promedio,
+    cantidad: nuevaRep.cantidad,
+  };
+  reputacionCache.set(r.inquilino_id, rep);
+}
+
+const promedioInquilino = rep.promedio;
+const cantidadOperacionesInquilino = rep.cantidad;
+
       const { data: perfil } = await supabase
         .from("profiles")
         .select("nombre, telefono")
@@ -564,9 +706,16 @@ async function handleClosure(
       const reservaFinalizada =
         new Date(ultimaFecha + "T23:59:59") < new Date();
 
-      
+      const { data: review } = await supabase
+  .from("reviews")
+  .select("id")
+  .eq("operacion_id", r.operacion_id)
+  .eq("type", "owner_to_renter")
+  .maybeSingle();
 
       return {
+        promedioInquilino,
+        cantidadOperacionesInquilino,
         operacion_id: r.operacion_id,
         publicacion_titulo: publicacion?.titulo,
         fecha: r.fecha,
@@ -576,7 +725,7 @@ async function handleClosure(
         inquilino_id: r.inquilino_id,
         reservaFinalizada,
         
-        confirmedByOwner: false,
+        reviewOwnerRealizada: !!review,
       };
     })
   );
@@ -586,15 +735,20 @@ async function handleClosure(
   resultado.forEach((r) => {
     if (!agrupadas[r.operacion_id]) {
       agrupadas[r.operacion_id] = {
-        operacion_id: r.operacion_id,
-        nombre: r.nombre,
-        telefono: r.telefono,
-        precio_dia: r.precio_dia,
-        inquilino_id: r.inquilino_id,
-        reservaFinalizada: r.reservaFinalizada,
-        
-        fechas: [],
-      };
+  operacion_id: r.operacion_id,
+  nombre: r.nombre,
+  telefono: r.telefono,
+  precio_dia: r.precio_dia,
+  inquilino_id: r.inquilino_id,
+  reservaFinalizada: r.reservaFinalizada,
+  reviewOwnerRealizada: r.reviewOwnerRealizada,
+
+  // 👇 ESTO ES LO QUE FALTABA
+  promedioInquilino: r.promedioInquilino,
+  cantidadOperacionesInquilino: r.cantidadOperacionesInquilino,
+
+  fechas: [],
+};
     }
 
     agrupadas[r.operacion_id].fechas.push(r.fecha);
@@ -610,7 +764,9 @@ setReservas(final);
 
   return (
     <div style={{ marginTop: "10px" }}>
-      {reservas.map((r, i) => {
+      {reservas
+  .filter((r) => !r.reviewOwnerRealizada)
+  .map((r, i) => {
 
         const cantidadDias = r.fechas.length;
 
@@ -655,6 +811,10 @@ console.log("CHECK BOTÓN:", {
 </strong>
 
 {" "}— 📞 {r.telefono || "Sin teléfono"}
+
+<div style={{ marginTop: "4px", color: "#FF7A00", fontSize: "13px" }}>
+  ⭐ {(r.promedioInquilino ?? 0).toFixed(1)} · {r.cantidadOperacionesInquilino ?? 0} ops
+</div>
 
 <div style={{ marginTop: "10px" }}>
   {r.fechas.map((fecha: string) => {
@@ -836,20 +996,12 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
 </h1>
 
         <p
-          style={{
-            color: "#FF7A00",
-          }}
-        >
-          ⭐ 5.0
-        </p>
-
-        <p
-          style={{
-            color: "#cccccc",
-          }}
-        >
-          0 operaciones
-        </p>
+  style={{
+    color: "#FF7A00",
+  }}
+>
+  ⭐ {promedioRating.toFixed(1)} · {cantidadOperaciones} operaciones
+</p>
       </div>
 
       
@@ -874,14 +1026,18 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
   ) : (
     reservasActivas.map((reserva) => (
       <div
-        key={reserva.operacion_id}
-        style={{
-          borderBottom:
-            "1px solid rgba(255,255,255,0.1)",
-          paddingBottom: "20px",
-          marginBottom: "20px",
-        }}
-      >
+  key={reserva.operacion_id}
+  style={{
+    borderBottom:
+      "1px solid rgba(255,255,255,0.1)",
+    paddingBottom: "20px",
+    marginBottom: "20px",
+    position: "relative",
+  }}
+>
+
+  
+
         <Link
           href={`/publicacion/${reserva.publicacion.id}`}
           style={{
@@ -1063,14 +1219,59 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
   .filter(r => r.reviewRealizada || r.reviewOwnerRealizada)
   .map((reserva) => (
       <div
-        key={reserva.operacion_id}
-        style={{
-          borderBottom:
-            "1px solid rgba(255,255,255,0.1)",
-          paddingBottom: "20px",
-          marginBottom: "20px",
-        }}
-      >
+  key={reserva.operacion_id}
+  style={{
+    borderBottom:
+      "1px solid rgba(255,255,255,0.1)",
+    paddingBottom: "20px",
+    marginBottom: "20px",
+    position: "relative",
+  }}
+>
+
+  <button
+  onClick={async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("hidden_notifications")
+      .insert({
+        user_id: user.id,
+        review_id: reserva.reviewId,
+      });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+   setMisReservas((prev) =>
+  prev.filter(
+    (r) => r.operacion_id !== reserva.operacion_id
+  )
+);
+
+cargarMisReservas();
+  }}
+  style={{
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    background: "transparent",
+    border: "none",
+    color: "#888",
+    cursor: "pointer",
+    fontSize: "18px",
+    fontWeight: "bold",
+  }}
+>
+  ✕
+</button>
+
         <Link
           href={`/publicacion/${reserva.publicacion.id}`}
           style={{
@@ -1167,6 +1368,10 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
           {pub.titulo}
         </Link>
 
+        <p style={{ color: "#FF7A00", marginTop: "6px" }}>
+  ⭐ {(pub.promedioRating ?? 0).toFixed(1)} · {pub.cantidadReviews ?? 0} valoraciones
+</p>
+
         <PublicacionReservas
   publicacionId={pub.publication_id}
   precio={pub.precio}
@@ -1201,14 +1406,56 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
 ) : (
   <>
     {historialPublicaciones.map((r) => (
+
+      
       <div
-        key={r.id}
-        style={{
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-          paddingBottom: "15px",
-          marginBottom: "15px",
-        }}
-      >
+  key={r.id}
+  style={{
+    borderBottom: "1px solid rgba(255,255,255,0.1)",
+    paddingBottom: "15px",
+    marginBottom: "15px",
+    position: "relative",
+  }}
+>
+
+  
+  <button
+    onClick={async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("hidden_notifications")
+        .insert({
+          user_id: user.id,
+          review_id: r.id,
+        });
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      setHistorialPublicaciones((prev) =>
+        prev.filter((item) => item.id !== r.id)
+      );
+    }}
+    style={{
+      position: "absolute",
+      top: "10px",
+      right: "10px",
+      background: "transparent",
+      border: "none",
+      color: "#888",
+      cursor: "pointer",
+      fontSize: "18px",
+      fontWeight: "bold",
+    }}
+  >
+    ✕
+  </button>
+
+
         <p>
           Valoraste con{" "}
           <strong>{"★".repeat(r.puntuacion)}</strong> a{" "}
@@ -1216,7 +1463,24 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
           <strong>{r.publications?.titulo}</strong>
         </p>
 
-        {!r.todoOk && (
+        {r.fechaFinalizacion && (
+  <p
+    style={{
+      marginTop: "6px",
+      color: "#bbbbbb",
+      fontSize: "14px",
+    }}
+  >
+    📅 Finalizó la reserva el{" "}
+    {(() => {
+      const [anio, mes, dia] =
+        r.fechaFinalizacion.split("-");
+      return `${dia}/${mes}/${anio}`;
+    })()}
+  </p>
+)}
+
+        {!r.todoOk && !r.pendiente && (
           <div
             style={{
               display: "flex",
@@ -1268,21 +1532,40 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
             </button>
 
             <button
-              style={{
-                flex: 1,
-                background: "#C62828",
-                color: "white",
-                border: "none",
-                borderRadius: "10px",
-                padding: "10px",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
-            >
-              Cobrar monto de resguardo
-            </button>
+  onClick={() =>
+    router.push(`/perfil/resguardo/${r.operacion_id}`)
+  }
+  style={{
+    flex: 1,
+    background: "#C62828",
+    color: "white",
+    border: "none",
+    borderRadius: "10px",
+    padding: "10px",
+    cursor: "pointer",
+    fontWeight: "bold",
+  }}
+>
+  Cobrar monto de resguardo
+</button>
           </div>
         )}
+
+        {r.pendiente && (
+  <div
+    style={{
+      marginTop: "15px",
+      padding: "10px",
+      borderRadius: "10px",
+      background: "#FFB300",
+      color: "#000",
+      textAlign: "center",
+      fontWeight: "bold",
+    }}
+  >
+    Pendiente
+  </div>
+)}
       </div>
     ))}
   </>

@@ -45,24 +45,39 @@ if (error) {
   return;
 }
 
-setPublicaciones(data || []);
+const publicacionesConRating = await Promise.all(
+  (data || []).map(async (pub: any) => {
+    const { data: reviews } = await supabase
+      .from("reviews")
+      .select("puntuacion")
+      .eq("publication_id", pub.id)
+      .eq("type", "renter_to_publication");
 
-  console.log("FILTERS:", filters);
+    const promedio =
+      reviews && reviews.length > 0
+        ? reviews.reduce((acc, r) => acc + r.puntuacion, 0) /
+          reviews.length
+        : 0;
 
-  console.log("=== PRIMERA PUBLICACION COMPLETA ===");
-console.log(data?.[0]);
+    return {
+      ...pub,
+      promedioRating: promedio,
+      cantidadReviews: reviews?.length || 0,
+    };
+  })
+);
 
+setPublicaciones(publicacionesConRating);
 
+console.log("FILTERS:", filters);
 
-  console.log(data);
+console.log("=== PRIMERA PUBLICACION COMPLETA ===");
+console.log(publicacionesConRating?.[0]);
 
-  console.log("DATA:", data);
+console.log(publicacionesConRating);
+
+console.log("DATA:", publicacionesConRating);
 console.log("ERROR:", error);
-
-  if (error) {
-    console.log("❌ SUPABASE ERROR:", error);
-    return;
-  }
 
   
 }
@@ -491,7 +506,9 @@ const provincias = [
     color: "#888",
   }}
 >
-  Sin valoraciones
+  {pub.cantidadReviews > 0
+    ? `⭐ ${pub.promedioRating.toFixed(1)} · ${pub.cantidadReviews} valoraciones`
+    : "Sin valoraciones"}
 </p>
         <p
           style={{
