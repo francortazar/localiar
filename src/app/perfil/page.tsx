@@ -17,6 +17,7 @@ export default function PerfilPage() {
   const [historialPublicaciones, setHistorialPublicaciones] = useState<any[]>([]);
   const [closuresHistorial, setClosuresHistorial] = useState<string[]>([]);
   const [cantidadOperaciones, setCantidadOperaciones] = useState(0);
+  const [notificaciones, setNotificaciones] = useState<any[]>([]);
 
   async function recargarPerfil() {
   await Promise.all([
@@ -34,6 +35,7 @@ export default function PerfilPage() {
   cargarMisPublicaciones();
   cargarFavoritos();
   cargarHistorialPublicaciones();
+  cargarNotificaciones();
 }, []);
 
 async function cargarFavoritos() {
@@ -163,6 +165,125 @@ async function valorarReserva(
 
   alert("Gracias por tu valoración.");
   cargarMisReservas();
+}
+
+async function cargarNotificaciones() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data: leidas, error: errorLeidas } = await supabase
+  .from("read_notifications")
+  .select("message_id")
+  .eq("user_id", user.id);
+  const { data: ocultas, error: errorOcultas } = await supabase
+  .from("hidden_publication_notifications")
+  .select("message_id")
+  .eq("user_id", user.id);
+
+if (errorOcultas) {
+  console.log(errorOcultas);
+  return;
+}
+
+const mensajesOcultos = new Set(
+  (ocultas || []).map((n) => n.message_id)
+);
+
+if (errorLeidas) {
+  console.log(errorLeidas);
+  return;
+}
+
+const mensajesLeidos = new Set(
+  (leidas || []).map((n) => n.message_id)
+);
+
+  // Traigo los IDs de mis publicaciones
+  const { data: publicaciones, error: errorPublicaciones } = await supabase
+    .from("publications")
+    .select("id")
+    .eq("owner_id", user.id);
+
+  if (errorPublicaciones) {
+    console.log(errorPublicaciones);
+    return;
+  }
+
+  const idsPublicaciones = (publicaciones || []).map((p) => p.id);
+
+  console.log("MIS PUBLICACIONES:", idsPublicaciones);
+
+  // Traigo todos los mensajes
+  const { data, error } = await supabase
+    .from("publication_messages")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+    console.log("TODOS LOS MENSAJES:", data);
+
+    const preguntas = (data || []).filter(
+  (m) => m.tipo === "pregunta"
+);
+
+const respuestas = (data || []).filter(
+  (m) => m.tipo === "respuesta"
+);
+
+console.table(
+  respuestas.map((r) => ({
+    id: r.id,
+    parent_id: r.parent_id,
+    publication_id: r.publication_id,
+    user_id: r.user_id,
+    tipo: r.tipo,
+    texto: r.texto,
+  }))
+);
+
+console.log("PREGUNTAS:", preguntas);
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  // SOLO preguntas hechas en mis publicaciones
+  const preguntasEnMisPublicaciones = (data || []).filter(
+  (m) =>
+    m.tipo === "pregunta" &&
+    idsPublicaciones.includes(m.publication_id) &&
+    m.user_id !== user.id
+);
+
+const respuestasAMisPreguntas = respuestas.filter((respuesta) => {
+  const preguntaOriginal = preguntas.find(
+    (p) => p.id === respuesta.parent_id
+  );
+
+  return preguntaOriginal?.user_id === user.id;
+});
+
+const filtradas = [
+  ...preguntasEnMisPublicaciones,
+  ...respuestasAMisPreguntas,
+]
+  .filter((n) => !mensajesOcultos.has(n.id))
+  .map((n) => ({
+    ...n,
+    leida: mensajesLeidos.has(n.id),
+  }))
+  .sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() -
+      new Date(a.created_at).getTime()
+  );
+
+  setNotificaciones(filtradas);
+
+  console.log("NOTIFICACIONES FILTRADAS:", filtradas);
 }
 
 async function cargarMisReservas() {
@@ -1631,15 +1752,130 @@ cargarMisReservas();
   )}
 </div>
 
+<div
+  style={{
+    background: "#111111",
+    borderRadius: "16px",
+    padding: "20px",
+    marginTop: "20px",
+  }}
+>
+  <h2
+    style={{
+      color: "#FF7A00",
+      marginBottom: "20px",
+    }}
+  >
+    Notificaciones
+  </h2>
+
+  {notificaciones.length === 0 ? (
+    <p>No tenés notificaciones.</p>
+  ) : (
+    notificaciones.map((n: any) => (
+      
+      <div
+  key={n.id}
+  style={{
+    position: "relative",
+  }}
+>
+  <button
+  onClick={async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("hidden_publication_notifications")
+      .insert({
+        user_id: user.id,
+        message_id: n.id,
+      });
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    setNotificaciones((prev) =>
+      prev.filter((item) => item.id !== n.id)
+    );
+  }}
+  style={{
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    border: "none",
+    background: "transparent",
+    color: "#FFFFFF",
+    cursor: "pointer",
+    fontSize: "18px",
+    fontWeight: "bold",
+    zIndex: 2,
+  }}
+>
+  ✕
+</button>
+      <Link
+  href={`/publicacion/${n.publication_id}`}
+  onClick={async () => {
+    await supabase
+      .from("read_notifications")
+      .insert({
+        user_id: usuario.id,
+        message_id: n.id,
+      });
+  }}
+  style={{
+  display: "block",
+  borderBottom: "1px solid rgba(255,255,255,0.1)",
+  marginBottom: "12px",
+  textDecoration: "none",
+  color: n.leida ? "white" : "black",
+  cursor: "pointer",
+  background: n.leida ? "transparent" : "#FF7A00",
+  borderRadius: "10px",
+  padding: "12px",
+}}
+>
+        <p>
+          <strong>{n.tipo}</strong>
+        </p>
+
+        <p>{n.texto}</p>
+
+        <p style={{ color: "#999", fontSize: "13px" }}>
+          {n.nombre_usuario}
+        </p>
+
+        <p style={{ color: "#777", fontSize: "12px" }}>
+  {new Date(n.created_at).toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })}
+</p>
+      </Link>
+</div>
+    ))
+  )}
+</div>
+
         <MenuCard
           icon="💰"
           title="Movimientos"
         />
 
-        <MenuCard
-          icon="🔔"
-          title="Notificaciones"
-        />
+        
 
         <MenuCard
           icon="⚙️"
