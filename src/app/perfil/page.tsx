@@ -98,6 +98,71 @@ async function cancelarReserva(
 
   if (!confirmar) return;
 
+  const { data: reservasCanceladas, error: errorReservas } =
+  await supabase
+    .from("reservations")
+    .select(`
+      *,
+      publications (
+        owner_id,
+        precio_dia,
+        resguardo
+      )
+    `)
+    .eq("operacion_id", operacionId);
+
+
+if (errorReservas || !reservasCanceladas?.length) {
+  console.error(errorReservas);
+  return;
+}
+
+
+const primeraReserva = reservasCanceladas[0];
+
+const cantidadDias = reservasCanceladas.length;
+
+const precioDia =
+  Number(primeraReserva.publications.precio_dia);
+
+const alquiler =
+  cantidadDias * precioDia;
+
+const comision =
+  alquiler * 0.075;
+
+const montoDevolver = alquiler;
+
+
+const { error: errorCancelacion } =
+  await supabase
+    .from("reservation_cancellations")
+    .insert({
+      operacion_id: operacionId,
+      publication_id: primeraReserva.publication_id,
+      owner_id: primeraReserva.publications.owner_id,
+      inquilino_id: primeraReserva.inquilino_id,
+      cancelado_por: "inquilino",
+      cantidad_dias: cantidadDias,
+      precio_dia: precioDia,
+      comision,
+      resguardo:
+  Number(primeraReserva.publications.resguardo),
+
+monto_devolver: montoDevolver,
+
+devolver_comision: false,
+
+fechas,
+    });
+
+
+if (errorCancelacion) {
+  console.error(errorCancelacion);
+  alert(errorCancelacion.message);
+  return;
+}
+
   console.log(
     "BORRANDO OPERACION:",
     operacionId
@@ -573,14 +638,15 @@ async function cargarUsuario() {
   if (!user) return;
 
   // PERFIL
-  const { data } = await supabase
-    .from("profiles")
-    .select("id, nombre")
-    .eq("id", user.id)
-    .single();
+ const { data } = await supabase
+  .from("profiles")
+  .select("id, nombre, es_admin")
+  .eq("id", user.id)
+  .single();
 
   if (data) {
     setUsuario(data);
+    console.log("USUARIO:", data);
   }
 
   // RATING COMO INQUILINO (solo este caso)
@@ -746,6 +812,81 @@ async function handleClosure(
   ) {
     const confirmar = confirm("¿Cancelar esta fecha de la reserva?");
     if (!confirmar) return;
+
+const { data: reservaCancelada, error: errorReserva } =
+  await supabase
+    .from("reservations")
+    .select(`
+      *,
+      publications (
+        owner_id,
+        precio_dia,
+        resguardo
+      )
+    `)
+    .eq("operacion_id", operacionId)
+    .eq("fecha", fecha)
+    .single();
+
+
+if (errorReserva || !reservaCancelada) {
+  console.error(errorReserva);
+  alert("No se encontró la reserva.");
+  return;
+}
+
+const { count: reservasRestantes } = await supabase
+  .from("reservations")
+  .select("*", {
+    count: "exact",
+    head: true,
+  })
+  .eq("operacion_id", operacionId);
+
+const esUltimaFecha =
+  reservasRestantes === 1;
+
+const precioDia =
+  Number(reservaCancelada.publications.precio_dia);
+
+
+const alquiler = precioDia;
+
+const comision =
+  alquiler * 0.075;
+
+const resguardo = esUltimaFecha
+  ? Number(reservaCancelada.publications.resguardo)
+  : 0;
+
+const montoDevolver =
+  alquiler + comision + resguardo;
+
+
+const { error: errorCancelacion } =
+  await supabase
+    .from("reservation_cancellations")
+    .insert({
+      operacion_id: operacionId,
+      publication_id: reservaCancelada.publication_id,
+      owner_id: reservaCancelada.publications.owner_id,
+      inquilino_id: reservaCancelada.inquilino_id,
+      cancelado_por: "propietario",
+      cantidad_dias: 1,
+      precio_dia: precioDia,
+      comision,
+      resguardo,
+      devolver_comision: true,
+      fechas: [fecha],
+      monto_devolver: montoDevolver,
+    });
+
+
+if (errorCancelacion) {
+  console.error(errorCancelacion);
+  alert(errorCancelacion.message);
+  return;
+}
 
     const { error } = await supabase
       .from("reservations")
@@ -1881,7 +2022,19 @@ cargarMisReservas();
           icon="⚙️"
           title="Mi Perfil"
         />
+
+{usuario?.es_admin && (
+  <MenuCard
+  icon="🛡️"
+  title="Panel de Administración"
+  href="/admin"
+/>
+)}
+
       </div>
+
+
+
       <button
   onClick={cerrarSesion}
   style={{
@@ -1944,11 +2097,17 @@ cargarMisReservas();
 function MenuCard({
   icon,
   title,
+  href,
 }: {
   icon: string;
   title: string;
+  href?: string;
 }) {
-  return (
+  return href ? (
+  <Link
+    href={href}
+    style={{ textDecoration: "none", color: "inherit" }}
+  >
     <div
       style={{
         background: "#111111",
@@ -1962,21 +2121,36 @@ function MenuCard({
           "0 4px 15px rgba(0,0,0,0.5)",
       }}
     >
-      <span
-        style={{
-          fontSize: "24px",
-        }}
-      >
+      <span style={{ fontSize: "24px" }}>
         {icon}
       </span>
 
-      <span
-        style={{
-          fontWeight: "bold",
-        }}
-      >
+      <span style={{ fontWeight: "bold" }}>
         {title}
       </span>
     </div>
-  );
+  </Link>
+) : (
+  <div
+    style={{
+      background: "#111111",
+      borderRadius: "16px",
+      padding: "18px",
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      cursor: "pointer",
+      boxShadow:
+        "0 4px 15px rgba(0,0,0,0.5)",
+    }}
+  >
+    <span style={{ fontSize: "24px" }}>
+      {icon}
+    </span>
+
+    <span style={{ fontWeight: "bold" }}>
+      {title}
+    </span>
+  </div>
+);
 }

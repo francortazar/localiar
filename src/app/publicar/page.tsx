@@ -13,6 +13,7 @@ const [provincia, setProvincia] = useState("");
 const [ciudad, setCiudad] = useState("");
 const [direccion, setDireccion] = useState("");
     const hoy = new Date();
+    const [aliasPago, setAliasPago] = useState("");
 
 const mesActual = hoy.getMonth();
 const anioActual = hoy.getFullYear();
@@ -100,6 +101,11 @@ if (descripcion.length > 240) {
   return;
 }
 
+if (aliasPago.trim().length === 0) {
+  alert("Debes ingresar un alias para recibir los pagos");
+  return;
+}
+
     if (imagenes.length === 0) {
   alert(
     "Debes cargar al menos una foto"
@@ -120,16 +126,17 @@ if (descripcion.length > 240) {
     .from("publications")
     .insert([
       {
-        owner_id: user.id,
-        titulo,
-        descripcion,
-        provincia,
-        ciudad,
-        direccion,
-        precio_dia:
-          Number(
-            precio.replace(/\./g, "")
-          ) || 0,
+  owner_id: user.id,
+  titulo,
+  descripcion,
+  provincia,
+  ciudad,
+  direccion,
+  alias_pago: aliasPago.trim(),
+  precio_dia:
+    Number(
+      precio.replace(/\./g, "")
+    ) || 0,
         resguardo:
           Number(
             resguardo.replace(/\./g, "")
@@ -525,6 +532,31 @@ onChange={(e) =>
             la operación si no existen reclamos.
           </p>
         </div>
+
+        {/* ALIAS DE PAGO */}
+
+<div>
+  <label>Alias para recibir pagos *</label>
+
+  <input
+    type="text"
+    placeholder="Ej: mi.local.mp"
+    style={inputStyle}
+    value={aliasPago}
+    onChange={(e) => setAliasPago(e.target.value)}
+  />
+
+  <p
+    style={{
+      fontSize: "13px",
+      color: "#aaaaaa",
+      marginTop: "6px",
+    }}
+  >
+    Este alias será utilizado por Localiar para transferirte
+    el dinero correspondiente a tus reservas.
+  </p>
+</div>
 
         {/* DISPONIBILIDAD */}
 

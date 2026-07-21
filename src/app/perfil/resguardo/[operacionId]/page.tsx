@@ -177,14 +177,32 @@ style={{ display: "none" }}
   return data.publicUrl;
 };
 
- if (fotos.length > 0) {
+ 
+
+  const { data: claim, error } = await supabase
+  .from("owner_claims")
+  .insert({
+    operacion_id: operacionId,
+    owner_id: user.id,
+    description: descargo,
+  })
+  .select("id")
+  .single();
+
+  if (error) {
+    console.log(error);
+    alert(error.message);
+    return;
+  }
+
+  if (fotos.length > 0) {
   const fotosComprimidas = await Promise.all(
     fotos.map(async (foto) => {
       return await imageCompression(foto, {
-        maxWidthOrHeight: 1200,
-        maxSizeMB: 0.5,
-        useWebWorker: true,
-      });
+  maxWidthOrHeight: 1000,
+  maxSizeMB: 0.3,
+  useWebWorker: true,
+});
     })
   );
 
@@ -194,22 +212,27 @@ style={{ display: "none" }}
     )
   );
 
-  console.log("URLs subidas:", urls);
-}
+  const urlsValidas = urls.filter(
+    (url): url is string => url !== null
+  );
 
-  const { error } = await supabase
-    .from("owner_claims")
-    .insert({
-      operacion_id: operacionId,
-      owner_id: user.id,
-      description: descargo,
-    });
+  if (urlsValidas.length > 0) {
+    const { error: imagenesError } = await supabase
+      .from("owner_claim_images")
+      .insert(
+        urlsValidas.map((url) => ({
+          claim_id: claim.id,
+          image_url: url,
+        }))
+      );
 
-  if (error) {
-    console.log(error);
-    alert(error.message);
-    return;
+    if (imagenesError) {
+      console.log(imagenesError);
+      alert("El reclamo se creó, pero hubo un error al guardar las fotos.");
+      return;
+    }
   }
+}
 
   alert("Descargo guardado correctamente.");
 
