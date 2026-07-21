@@ -649,6 +649,9 @@ async function cargarUsuario() {
     console.log("USUARIO:", data);
   }
 
+  console.log("USUARIO LOGUEADO:", user.id);
+console.log("PERFIL ADMIN:", data);
+
   // RATING COMO INQUILINO (solo este caso)
   const { data: reviews } = await supabase
     .from("reviews")
