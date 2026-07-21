@@ -2026,9 +2026,6 @@ cargarMisReservas();
           title="Mi Perfil"
         />
 
-        <div style={{color:"white"}}>
-  ADMIN: {String(usuario?.es_admin)}
-</div>
 
 {usuario?.es_admin && (
   <MenuCard
