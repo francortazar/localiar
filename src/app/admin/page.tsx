@@ -84,11 +84,18 @@ export default function AdminPage() {
         />
 
         <AdminCard
-          icon="📊"
-          title="Estadísticas"
-          description="Visualizar métricas de la plataforma."
-          href="/admin/estadisticas"
-        />
+  icon="🎯"
+  title="Inteligencia de Mercado"
+  description="Analizar el comportamiento de los usuarios y la segmentación comercial."
+  href="/admin/inteligencia"
+/>
+
+<AdminCard
+  icon="📢"
+  title="Publicidad"
+  description="Administrar campañas publicitarias."
+  href="/admin/publicidad"
+/>
       </div>
     </>
   );

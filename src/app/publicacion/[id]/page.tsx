@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { supabase } from "../../lib/supabase";
+import { registrarEventoPublicacion } from "../../lib/publicationEvents";
 import { useParams } from "next/navigation";
 
 
@@ -322,6 +323,12 @@ if (reservas) {
 
   if (!error && data) {
     setPublicacion(data);
+
+    await registrarEventoPublicacion(
+      data.id,
+      "view",
+      
+    );
 
 const { data: categoriasData } =
   await supabase

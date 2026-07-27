@@ -4,6 +4,14 @@ import { Fragment, useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import Link from "next/link";
 import Calendar from "../components/Calendar";
+import { obtenerCategorias } from "./lib/categories";
+import {
+  registrarInteresCategoria,
+  registrarInteresProvincia,
+  registrarInteresMercado,
+} from "./lib/interests";
+import { obtenerProvincias } from "./lib/provinces";
+import AdvertisingBanner from "../components/AdvertisingBanner";
 
 export default function Home() {
   const [publicaciones, setPublicaciones] = useState<any[]>([]);
@@ -11,12 +19,18 @@ export default function Home() {
   
   
 const [usuario, setUsuario] = useState<any>(null);
+const [categorias, setCategorias] = useState<
+  { id: string; nombre: string }[]
+>([]);
 const [filters, setFilters] = useState({
   text: "",
   provincia: "",
   categoria: "",
   fechas: [] as string[],
 });
+const [provincias, setProvincias] = useState<
+  { id: string; nombre: string }[]
+>([]);
 
 const publicacionesFiltradas = publicaciones;
 
@@ -28,14 +42,28 @@ useEffect(() => {
   cargarUsuario();
 }, []);
 
+useEffect(() => {
+  cargarCategorias();
+}, []);
+
+useEffect(() => {
+  cargarProvincias();
+}, []);
+
 async function cargarPublicaciones(filters?: any) {
 
 const { data, error } = await supabase.rpc(
   "search_publications",
   {
     p_text: filters?.text || "",
-    p_provincia: filters?.provincia || "",
-    p_categoria: filters?.categoria || "",
+    p_provincia:
+  provincias.find(
+    (p) => p.id === filters?.provincia
+  )?.nombre || "",
+    p_categoria:
+  categorias.find(
+    (c) => c.id === filters?.categoria
+  )?.nombre || "",
     p_fechas: filters?.fechas || [],
   }
 );
@@ -99,16 +127,33 @@ async function cargarUsuario() {
   }
 }
 
-const provincias = [
-  "Todas",
-  "San Luis",
-  "Buenos Aires",
-  "Córdoba",
-  "Mendoza",
-  "CABA",
-];
+async function cargarCategorias() {
+  const data = await obtenerCategorias();
 
+  setCategorias(data);
 
+  console.log("CATEGORÍAS HOME:", data);
+}
+
+async function cargarProvincias() {
+  const data = await obtenerProvincias();
+
+  setProvincias(data);
+
+  console.log("PROVINCIAS HOME:", data);
+}
+
+const bloquesPublicaciones = [];
+
+for (
+  let i = 0;
+  i < publicacionesFiltradas.length;
+  i += 4
+) {
+  bloquesPublicaciones.push(
+    publicacionesFiltradas.slice(i, i + 4)
+  );
+}
 
   return (
     <main
@@ -211,41 +256,59 @@ const provincias = [
     }}
   >
     📍 {filters.provincia && filters.provincia !== "__open"
-      ? filters.provincia
+      ? provincias.find(
+          (p) => p.id === filters.provincia
+        )?.nombre
       : "Todas"}
   </button>
 
   {filters.provincia === "__open" && (
     <div
       style={{
-        
-        position: "absolute",
-        top: "45px",
-        left: 0,
-        background: "#111",
-        border: "1px solid #FF7A00",
-        borderRadius: "10px",
-        width: "200px",
-        zIndex: 9999,
-        overflow: "hidden",
-      }}
+  position: "fixed",
+  top: "150px",
+  left: "12px",
+  right: "12px",
+  background: "#111",
+  border: "1px solid #FF7A00",
+  borderRadius: "10px",
+  zIndex: 9999,
+  maxHeight: "60vh",
+  overflowY: "auto",
+}}
     >
       {[
-        "Todas",
-        "San Luis",
-        "Buenos Aires",
-        "Córdoba",
-        "Mendoza",
-        "CABA",
-      ].map((prov) => (
+  { id: "todas", nombre: "Todas" },
+  ...provincias,
+].map((prov) => (
         <div
-          key={prov}
-          onClick={() =>
-            setFilters({
-              ...filters,
-              provincia: prov === "Todas" ? "" : prov,
-            })
-          }
+          key={prov.id}
+          onClick={async () => {
+  if (prov.nombre !== "Todas" && filters.provincia !== prov.nombre) {
+  await registrarInteresProvincia(prov.id);
+
+  if (filters.categoria) {
+    const categoriaSeleccionada = categorias.find(
+      (c) => c.nombre === filters.categoria
+    );
+
+    if (categoriaSeleccionada) {
+      await registrarInteresMercado(
+        categoriaSeleccionada.id,
+        prov.id
+      );
+    }
+  }
+}
+
+  setFilters({
+  ...filters,
+  provincia:
+    prov.nombre === "Todas"
+      ? ""
+      : prov.id,
+});
+}}
           style={{
             padding: "10px",
             cursor: "pointer",
@@ -253,7 +316,7 @@ const provincias = [
             color: "white",
           }}
         >
-          {prov}
+        {prov.nombre}
         </div>
       ))}
     </div>
@@ -310,48 +373,71 @@ const provincias = [
     paddingBottom: "4px",
   }}
 >
-  {[
-    "Todas",
-    "Peluquería",
-    "Estética",
-    "Gastronomía",
-    "Salud",
-    "Fitness",
-    "Educación",
-    "Taller",
-    "Comercio",
-    "Coworking",
-    "Fondo de comercio",
-    "Local vacío",
-  ].map((categoria) => (
-    
-    <button
+  <button
     onClick={() =>
-  setFilters({
-    ...filters,
-    categoria:
-      filters.categoria === categoria ? "" : categoria,
-  })
+      setFilters({
+        ...filters,
+        categoria: "",
+      })
+    }
+    style={{
+      whiteSpace: "nowrap",
+      padding: "8px 14px",
+      borderRadius: "999px",
+      border: "1px solid #FF7A00",
+      background: !filters.categoria ? "#FF7A00" : "transparent",
+      color: "white",
+      fontWeight: "bold",
+      cursor: "pointer",
+    }}
+  >
+    Todas
+  </button>
+
+  {categorias.map((categoria) => (
+    <button
+      key={categoria.id}
+     onClick={async () => {
+  if (filters.categoria !== categoria.nombre) {
+  await registrarInteresCategoria(categoria.id);
+
+  if (filters.provincia) {
+    const provinciaSeleccionada = provincias.find(
+      (p) => p.nombre === filters.provincia
+    );
+
+    if (provinciaSeleccionada) {
+      await registrarInteresMercado(
+        categoria.id,
+        provinciaSeleccionada.id
+      );
+    }
+  }
 }
-      key={categoria}
-      
-      style={{
-  whiteSpace: "nowrap",
-  padding: "8px 14px",
-  borderRadius: "999px",
-  border: "1px solid #FF7A00",
-  background:
-    filters.categoria === categoria ||
-    (categoria === "Todas" && !filters.categoria)
-      ? "#FF7A00"
-      : "transparent",
-  color: "white",
-  fontWeight: "bold",
-  cursor: "pointer",
+
+setFilters({
+  ...filters,
+  categoria:
+    filters.categoria === categoria.id
+      ? ""
+      : categoria.id,
+});
 }}
-      
+      style={{
+        whiteSpace: "nowrap",
+        padding: "8px 14px",
+        borderRadius: "999px",
+        border: "1px solid #FF7A00",
+        background:
+  filters.categoria === categoria.id
+    ? "#FF7A00"
+    : "transparent",
+        color: "white",
+        fontWeight: "bold",
+        cursor: "pointer",
+      }}
     >
-      {categoria}
+      {categoria.nombre}
     </button>
   ))}
 </div>
@@ -435,19 +521,26 @@ const provincias = [
 )}
 
       <div
+  style={{
+    marginTop: "260px",
+    marginBottom: "20px",
+    paddingLeft: "10px",
+    paddingRight: "10px",
+  }}
+>
+  <AdvertisingBanner filters={filters} />
+</div>
+
+<div
   className="grid grid-cols-2 md:grid-cols-4 gap-3"
   style={{
-    paddingTop: "260px",
     paddingBottom: "140px",
     paddingLeft: "10px",
     paddingRight: "10px",
   }}
-
 >
 
-
-
-  {publicacionesFiltradas.map((pub, index) => (
+{publicacionesFiltradas.map((pub, index) => (
   <Fragment key={index}>
     <Link
   href={`/publicacion/${pub.id}`}
@@ -456,6 +549,8 @@ const provincias = [
     color: "inherit",
   }}
 >
+
+  
   <div
     style={{
       background: "#111111",
@@ -545,25 +640,18 @@ const provincias = [
         </Link>
         
 
-    {(index + 1) % 20 === 0 && (
-      <div
-        style={{
-          gridColumn: "1 / -1",
-          background: "#1a1a1a",
-          borderRadius: "16px",
-          height: "120px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#FF7A00",
-          fontWeight: "bold",
-          fontSize: "22px",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.5)",
-        }}
-      >
-        ESPACIO PUBLICITARIO
-      </div>
-        )}
+   {(index + 1) % 12 === 0 && (
+  <div
+    style={{
+      gridColumn: "1 / -1",
+      width: "100%",
+      marginTop: "10px",
+      marginBottom: "10px",
+    }}
+  >
+    <AdvertisingBanner filters={filters} />
+  </div>
+)}
     </Fragment>
 ))}
 </div>

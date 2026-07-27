@@ -1,8 +1,11 @@
 "use client";
 import imageCompression from "browser-image-compression";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { obtenerCategorias } from "../lib/categories";
+import { obtenerProvincias } from "../lib/provinces";
+
 export default function PublicarPage() {
     
     const [precio, setPrecio] = useState("");
@@ -14,6 +17,9 @@ const [ciudad, setCiudad] = useState("");
 const [direccion, setDireccion] = useState("");
     const hoy = new Date();
     const [aliasPago, setAliasPago] = useState("");
+    const [categoriasDisponibles, setCategoriasDisponibles] = useState<
+  { id: string; nombre: string }[]
+>([]);
 
 const mesActual = hoy.getMonth();
 const anioActual = hoy.getFullYear();
@@ -71,6 +77,24 @@ function toggleCategoria(
       : [...prev, categoria]
   );
 }
+
+useEffect(() => {
+  async function cargarCategorias() {
+    const categorias = await obtenerCategorias();
+    setCategoriasDisponibles(categorias);
+  }
+
+  cargarCategorias();
+}, []);
+
+useEffect(() => {
+  async function cargarProvincias() {
+    const data = await obtenerProvincias();
+    setProvincias(data);
+  }
+
+  cargarProvincias();
+}, []);
 
 async function publicar() {
 
@@ -265,8 +289,8 @@ function eliminarImagen(index: number) {
   );
 }
 
-const [categorias, setCategorias] =
-  useState<string[]>([]);
+const [categorias, setCategorias] = useState<string[]>([]);
+const [provincias, setProvincias] = useState<any[]>([]);
   return (
     <main
       style={{
@@ -353,12 +377,18 @@ onChange={(e) =>
     setProvincia(e.target.value)
   }
 >
-            <option>Seleccionar provincia</option>
-            <option>Buenos Aires</option>
-            <option>CABA</option>
-            <option>Córdoba</option>
-            <option>San Luis</option>
-            <option>Mendoza</option>
+            <option value="">
+  Seleccionar provincia
+</option>
+
+{provincias.map((provincia) => (
+  <option
+    key={provincia.id}
+    value={provincia.nombre}
+  >
+    {provincia.nombre}
+  </option>
+))}
           </select>
         </div>
 
@@ -401,27 +431,15 @@ onChange={(e) =>
           <h2 style={sectionTitle}>Categorías *</h2>
 
           <div style={checkboxGrid}>
-            {[
-              "Peluquería",
-              "Estética",
-              "Gastronomía",
-              "Salud",
-              "Fitness",
-              "Educación",
-              "Taller",
-              "Comercio",
-              "Coworking",
-              "Fondo de comercio",
-              "Local vacío",
-            ].map((item) => (
-              <label key={item}>
+           {categoriasDisponibles.map((categoria) => (
+              <label key={categoria.id}>
                 <input
   type="checkbox"
-  checked={categorias.includes(item)}
+  checked={categorias.includes(categoria.nombre)}
   onChange={() =>
-    toggleCategoria(item)
+    toggleCategoria(categoria.nombre)
   }
-/> {item}
+/> {categoria.nombre}
               </label>
             ))}
           </div>
