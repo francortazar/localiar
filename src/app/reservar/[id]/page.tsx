@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import Link from "next/link";
 
+import { enviarEmailsReserva } from "../../lib/enviarEmailsReserva";
+
 export default function ReservarPage() {
 
   const [publicacion, setPublicacion] =
@@ -211,14 +213,40 @@ const reservas = diasSeleccionados.map(
   })
 );
 
-  const { error } = await supabase
-    .from("reservations")
-    .insert(reservas);
+const { data: reservasCreadas, error } = await supabase
+  .from("reservations")
+  .insert(reservas)
+  .select();
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+if (error) {
+  alert(error.message);
+  return;
+}
+
+  const { error: paymentError } = await supabase
+  .from("reservation_payments")
+  .insert([
+    {
+      reservation_id: reservasCreadas[0].id,
+      operacion_id: operacionId,
+      publication_id: publicationId,
+      tenant_id: user.id,
+      owner_id: publicacion.owner_id,
+      amount: total,
+      payment_method: "Transferencia",
+      status: "Aprobado",
+    },
+  ]);
+
+if (paymentError) {
+  console.error(
+    "Error creando pago:",
+    paymentError
+  );
+  return;
+}
+
+await enviarEmailsReserva(operacionId);
 
   alert("Reserva realizada correctamente");
 

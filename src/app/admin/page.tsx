@@ -49,6 +49,13 @@ export default function AdminPage() {
         />
 
         <AdminCard
+  icon="💰"
+  title="Pagos por reservas"
+  description="Visualizar cobros realizados por reservas y movimientos económicos."
+  href="/admin/pagos-reservas"
+/>
+
+        <AdminCard
           icon="📅"
           title="Reservas"
           description="Consultar y administrar todas las reservas."
@@ -78,9 +85,9 @@ export default function AdminPage() {
 
         <AdminCard
           icon="🚩"
-          title="Reportes"
-          description="Gestionar denuncias y reclamos."
-          href="/admin/reportes"
+          title="Centro de herramientas"
+          description="Pruebas, utilidades internas y herramientas de desarrollo para la administración de Localiar."
+          href="/admin/herramientas"
         />
 
         <AdminCard

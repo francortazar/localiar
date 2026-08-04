@@ -3,6 +3,9 @@ import { useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { registrarEventoPublicacion } from "../../lib/publicationEvents";
 import { useParams } from "next/navigation";
+import AdvertisingBanner from "@/components/AdvertisingBanner";
+import { obtenerCategorias } from "@/app/lib/categories";
+import { obtenerProvincias } from "@/app/lib/provinces";
 
 
 import Link from "next/link";
@@ -10,12 +13,16 @@ import { useState } from "react";
 
 export default function PublicacionPage() {
 
+const [categoriaPublicidad, setCategoriaPublicidad] = useState("");
+const [provinciaPublicidad, setProvinciaPublicidad] = useState("");
+
 const [categorias, setCategorias] =
   useState<any[]>([]);
 
   const [fechasDisponibles, setFechasDisponibles] =
   useState<string[]>([]);
 
+  
   const params = useParams();
   const publicationId = params.id as string;
   
@@ -338,6 +345,31 @@ const { data: categoriasData } =
 
 setCategorias(categoriasData || []);
 
+const todasLasCategorias = await obtenerCategorias();
+
+const categoriaId =
+  categoriasData?.[0]
+    ? todasLasCategorias.find(
+        (c) =>
+          c.nombre === categoriasData[0].categoria
+      )?.id || ""
+    : "";
+
+setCategoriaPublicidad(categoriaId);
+
+const todasLasProvincias = await obtenerProvincias();
+
+const provinciaId =
+  data.provincia
+    ? todasLasProvincias.find(
+        (p) =>
+          p.nombre === data.provincia
+      )?.id || ""
+    : "";
+
+setProvinciaPublicidad(provinciaId);
+
+console.log("CATEGORIAS PUBLICACION:", categoriasData);
     const {
   data: { user },
 } = await supabase.auth.getUser();
@@ -426,11 +458,23 @@ if (
         paddingBottom: "180px",
       }}
     >
+
+<AdvertisingBanner
+  filters={{
+    categoria: categoriaPublicidad,
+    provincia: provinciaPublicidad,
+  }}
+/>
       {/* FOTO PRINCIPAL */}
 
 <div
   style={{
     position: "relative",
+    marginTop: "16px",
+    marginLeft: "12px",
+    marginRight: "12px",
+    borderRadius: "16px",
+    overflow: "hidden",
   }}
 >
   {publicacion.publication_images?.length >
@@ -445,10 +489,12 @@ if (
         }
         alt=""
         style={{
-          width: "100%",
-          height: "280px",
-          objectFit: "cover",
-        }}
+  width: "100%",
+  height: "auto",
+  maxHeight: "520px",
+  objectFit: "contain",
+  display: "block",
+}}
       />
 
       {publicacion.publication_images
@@ -608,11 +654,22 @@ gap: "10px",
     background: "transparent",
     border: "none",
     cursor: "pointer",
-    fontSize: "24px",
     padding: 0,
+    width: "40px",
+    height: "40px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   }}
 >
-  📤
+  <img
+    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+    alt="Compartir por WhatsApp"
+    style={{
+      width: "32px",
+      height: "32px",
+    }}
+  />
 </button>
 </div>
           </div>

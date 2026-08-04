@@ -47,13 +47,24 @@ export default function PagosTable({
   }
 }
   return (
-    <div
+  <div
+    style={{
+      background: "#111",
+      borderRadius: "12px",
+      overflow: "hidden",
+      padding: "20px",
+    }}
+  >
+
+    <h2
       style={{
-        background: "#111",
-        borderRadius: "12px",
-        overflow: "hidden",
+        color: "#FF7A00",
+        marginBottom: "20px",
+        fontSize: "22px",
       }}
     >
+      Reservas a pagar
+    </h2>
       <table
         style={{
           width: "100%",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
@@ -10,7 +10,28 @@ export default function RegistroPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [telefono, setTelefono] = useState("");
-const [provincia, setProvincia] = useState("");
+  const [provincia, setProvincia] = useState("");
+
+const [provincias, setProvincias] = useState<any[]>([]);
+
+useEffect(() => {
+  async function cargarProvincias() {
+    const { data, error } = await supabase
+      .from("provinces")
+      .select("*")
+      .eq("activo", true)
+      .order("nombre");
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    setProvincias(data || []);
+  }
+
+  cargarProvincias();
+}, []);
 
   async function registrar() {
     if (
@@ -105,10 +126,13 @@ router.push("/");
           style={inputStyle}
         />
         <input
+  type="tel"
   placeholder="Teléfono"
   value={telefono}
   onChange={(e) =>
-    setTelefono(e.target.value)
+    setTelefono(
+      e.target.value.replace(/\D/g, "")
+    )
   }
   style={inputStyle}
 />
@@ -127,30 +151,12 @@ router.push("/");
     Seleccionar provincia
   </option>
 
-  <option>Buenos Aires</option>
-  <option>CABA</option>
-  <option>Catamarca</option>
-  <option>Chaco</option>
-  <option>Chubut</option>
-  <option>Córdoba</option>
-  <option>Corrientes</option>
-  <option>Entre Ríos</option>
-  <option>Formosa</option>
-  <option>Jujuy</option>
-  <option>La Pampa</option>
-  <option>La Rioja</option>
-  <option>Mendoza</option>
-  <option>Misiones</option>
-  <option>Neuquén</option>
-  <option>Río Negro</option>
-  <option>Salta</option>
-  <option>San Juan</option>
-  <option>San Luis</option>
-  <option>Santa Cruz</option>
-  <option>Santa Fe</option>
-  <option>Santiago del Estero</option>
-  <option>Tierra del Fuego</option>
-  <option>Tucumán</option>
+  {provincias.map((prov) => (
+    <option key={prov.id} value={prov.nombre}>
+      {prov.nombre}
+    </option>
+  ))}
+
 </select>
 
         <input

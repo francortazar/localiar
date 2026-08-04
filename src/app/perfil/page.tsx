@@ -6,7 +6,6 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 
 
-
 export default function PerfilPage() {
   const [misReservas, setMisReservas] = useState<any[]>([]);
   const [misPublicaciones, setMisPublicaciones] = useState<any[]>([]);
@@ -18,6 +17,18 @@ export default function PerfilPage() {
   const [closuresHistorial, setClosuresHistorial] = useState<string[]>([]);
   const [cantidadOperaciones, setCantidadOperaciones] = useState(0);
   const [notificaciones, setNotificaciones] = useState<any[]>([]);
+
+  const [mostrarReservas, setMostrarReservas] = useState(false);
+  const [mostrarHistorialReservas, setMostrarHistorialReservas] = useState(false);
+  const [mostrarPublicaciones, setMostrarPublicaciones] = useState(false);
+  const [mostrarHistorialPublicaciones, setMostrarHistorialPublicaciones] = useState(false);
+  const [mostrarFavoritos, setMostrarFavoritos] = useState(false);
+  const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
+  const [mostrarMovimientos, setMostrarMovimientos] = useState(false);
+
+
+
+
 
   async function recargarPerfil() {
   await Promise.all([
@@ -1277,16 +1288,44 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
     padding: "20px",
   }}
 >
+  <div
+  onClick={() => setMostrarReservas(!mostrarReservas)}
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    cursor: "pointer",
+    marginBottom: mostrarReservas ? "20px" : "0",
+  }}
+>
   <h2
     style={{
       color: "#FF7A00",
-      marginBottom: "20px",
+      margin: 0,
     }}
   >
     Mis Reservas
   </h2>
 
-  {reservasActivas.length === 0 ? (
+  <span
+    style={{
+      color: "#FF7A00",
+      fontSize: "18px",
+      transform: mostrarReservas
+        ? "rotate(90deg)"
+        : "rotate(0deg)",
+      transition: "0.2s",
+    }}
+  >
+    ▶
+  </span>
+</div>
+
+
+
+  {mostrarReservas && (
+  <>
+    {reservasActivas.length === 0 ? (
     <p>No tenés reservas todavía.</p>
   ) : (
     reservasActivas.map((reserva) => (
@@ -1456,8 +1495,10 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
   </div>
 )}
       </div>
-    ))
+        ))
   )}
+  </>
+)}
 </div>
 
 <div
@@ -1468,16 +1509,44 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
     marginTop: "20px",
   }}
 >
+  <div
+  onClick={() =>
+    setMostrarHistorialReservas(!mostrarHistorialReservas)
+  }
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    cursor: "pointer",
+    marginBottom: mostrarHistorialReservas ? "20px" : "0",
+  }}
+>
   <h2
     style={{
       color: "#FF7A00",
-      marginBottom: "20px",
+      margin: 0,
     }}
   >
     Historial de mis Reservas
   </h2>
 
-  {historial.length === 0 ? (
+  <span
+    style={{
+      color: "#FF7A00",
+      fontSize: "18px",
+      transform: mostrarHistorialReservas
+        ? "rotate(90deg)"
+        : "rotate(0deg)",
+      transition: "0.2s",
+    }}
+  >
+    ▶
+  </span>
+</div>
+
+  {mostrarHistorialReservas && (
+  <>
+    {historial.length === 0 ? (
     <p>No tenés operaciones finalizadas.</p>
   ) : (
     historial
@@ -1586,8 +1655,10 @@ cargarMisReservas();
           )}
         </p>
       </div>
-    ))
+        ))
   )}
+  </>
+)}
 </div>
 
         <div
@@ -1598,16 +1669,44 @@ cargarMisReservas();
     marginTop: "20px",
   }}
 >
+ <div
+  onClick={() =>
+    setMostrarPublicaciones(!mostrarPublicaciones)
+  }
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    cursor: "pointer",
+    marginBottom: mostrarPublicaciones ? "20px" : "0",
+  }}
+>
   <h2
     style={{
       color: "#FF7A00",
-      marginBottom: "20px",
+      margin: 0,
     }}
   >
     Mis Publicaciones
   </h2>
 
-  {misPublicaciones.length === 0 ? (
+  <span
+    style={{
+      color: "#FF7A00",
+      fontSize: "18px",
+      transform: mostrarPublicaciones
+        ? "rotate(90deg)"
+        : "rotate(0deg)",
+      transition: "0.2s",
+    }}
+  >
+    ▶
+  </span>
+</div>
+
+  {mostrarPublicaciones && (
+  <>
+    {misPublicaciones.length === 0 ? (
     <p>No tenés publicaciones activas.</p>
   ) : (
     misPublicaciones.map((pub) => (
@@ -1645,8 +1744,8 @@ cargarMisReservas();
       </div>
     ))
   )}
-
-  
+  </>
+)}
 </div>
 
 <div
@@ -1657,20 +1756,52 @@ cargarMisReservas();
     marginTop: "20px",
   }}
 >
+  <div
+  onClick={() =>
+    setMostrarHistorialPublicaciones(
+      !mostrarHistorialPublicaciones
+    )
+  }
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    cursor: "pointer",
+    marginBottom: mostrarHistorialPublicaciones
+      ? "20px"
+      : "0",
+  }}
+>
   <h2
     style={{
       color: "#FF7A00",
-      marginBottom: "20px",
+      margin: 0,
     }}
   >
     Historial de mis publicaciones
   </h2>
 
-  {historialPublicaciones.length === 0 ? (
+  <span
+    style={{
+      color: "#FF7A00",
+      fontSize: "18px",
+      transform: mostrarHistorialPublicaciones
+        ? "rotate(90deg)"
+        : "rotate(0deg)",
+      transition: "0.2s",
+    }}
+  >
+    ▶
+  </span>
+</div>
+
+  {mostrarHistorialPublicaciones && (
+  <>
+    {historialPublicaciones.length === 0 ? (
   <p>No tenés valoraciones todavía.</p>
 ) : (
-  <>
-    {historialPublicaciones.map((r) => (
+  
+    historialPublicaciones.map((r) => (
 
       
       <div
@@ -1831,10 +1962,13 @@ cargarMisReservas();
     Pendiente
   </div>
 )}
-      </div>
-    ))}
+ </div>
+        ))
+    )}
   </>
 )}
+</div>
+
 
 
 
@@ -1846,16 +1980,46 @@ cargarMisReservas();
     marginTop: "20px",
   }}
 >
+  <div
+  onClick={() =>
+    setMostrarFavoritos(!mostrarFavoritos)
+  }
+  style={{
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  cursor: "pointer",
+  marginBottom: mostrarFavoritos ? "20px" : "0",
+}}
+>
   <h2
     style={{
       color: "#FF7A00",
-      marginBottom: "20px",
+      margin: 0,
     }}
   >
     Favoritos
   </h2>
 
-  {favoritos.length === 0 ? (
+  <span
+    style={{
+      color: "#FF7A00",
+      fontSize: "18px",
+      transform: mostrarFavoritos
+        ? "rotate(90deg)"
+        : "rotate(0deg)",
+      transition: "0.2s",
+    }}
+  >
+    ▶
+  </span>
+</div>
+
+
+
+  {mostrarFavoritos && (
+  <>
+    {favoritos.length === 0 ? (
     <p>No tenés favoritos guardados.</p>
   ) : (
     favoritos.map((fav: any) => (
@@ -1892,8 +2056,10 @@ cargarMisReservas();
           {" "}por día
         </div>
       </div>
-    ))
+        ))
   )}
+  </>
+)}
 </div>
 
 <div
@@ -1904,16 +2070,44 @@ cargarMisReservas();
     marginTop: "20px",
   }}
 >
-  <h2
+  <div
+    onClick={() =>
+      setMostrarNotificaciones(!mostrarNotificaciones)
+    }
     style={{
-      color: "#FF7A00",
-      marginBottom: "20px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      cursor: "pointer",
+      marginBottom: mostrarNotificaciones ? "20px" : "0",
     }}
   >
-    Notificaciones
-  </h2>
+    <h2
+      style={{
+        color: "#FF7A00",
+        margin: 0,
+      }}
+    >
+      Notificaciones
+    </h2>
 
-  {notificaciones.length === 0 ? (
+    <span
+      style={{
+        color: "#FF7A00",
+        fontSize: "18px",
+        transform: mostrarNotificaciones
+          ? "rotate(90deg)"
+          : "rotate(0deg)",
+        transition: "0.2s",
+      }}
+    >
+      ▶
+    </span>
+  </div>
+
+  {mostrarNotificaciones && (
+    <>
+      {notificaciones.length === 0 ? (
     <p>No tenés notificaciones.</p>
   ) : (
     notificaciones.map((n: any) => (
@@ -2010,21 +2204,97 @@ cargarMisReservas();
 </p>
       </Link>
 </div>
-    ))
+        ))
+  )}
+    </>
   )}
 </div>
 
-        <MenuCard
-          icon="💰"
-          title="Movimientos"
-        />
+        <div
+  style={{
+    background: "#111111",
+    borderRadius: "16px",
+    padding: "20px",
+    marginTop: "20px",
+  }}
+>
+  <div
+    onClick={() =>
+      setMostrarMovimientos(!mostrarMovimientos)
+    }
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      cursor: "pointer",
+      marginBottom: mostrarMovimientos ? "20px" : "0",
+    }}
+  >
+    <h2
+      style={{
+        color: "#FF7A00",
+        margin: 0,
+      }}
+    >
+      Movimientos de Capital
+    </h2>
+
+    <span
+      style={{
+        color: "#FF7A00",
+        fontSize: "18px",
+        transform: mostrarMovimientos
+          ? "rotate(90deg)"
+          : "rotate(0deg)",
+        transition: "0.2s",
+      }}
+    >
+      ▶
+    </span>
+  </div>
+
+  {mostrarMovimientos && (
+    <>
+      <div style={{ marginBottom: "30px" }}>
+        <h3
+          style={{
+            color: "#198754",
+            marginBottom: "15px",
+          }}
+        >
+          Ingresos
+        </h3>
+
+        <p style={{ color: "#888" }}>
+          Todavía no hay movimientos.
+        </p>
+      </div>
+
+      <div>
+        <h3
+          style={{
+            color: "#C62828",
+            marginBottom: "15px",
+          }}
+        >
+          Egresos
+        </h3>
+
+        <p style={{ color: "#888" }}>
+          Todavía no hay movimientos.
+        </p>
+      </div>
+    </>
+  )}
+</div>
 
         
 
         <MenuCard
-          icon="⚙️"
-          title="Mi Perfil"
-        />
+  icon="⚙️"
+  title="Editar perfil"
+  href="/perfil/editar"
+/>
 
 
 {usuario?.es_admin && (
@@ -2035,7 +2305,7 @@ cargarMisReservas();
 />
 )}
 
-      </div>
+      
 
 
 

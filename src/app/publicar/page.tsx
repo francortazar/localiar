@@ -5,9 +5,10 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { obtenerCategorias } from "../lib/categories";
 import { obtenerProvincias } from "../lib/provinces";
+import { useRouter } from "next/navigation";
 
 export default function PublicarPage() {
-    
+    const router = useRouter();
     const [precio, setPrecio] = useState("");
     const [resguardo, setResguardo] = useState("");
     const [titulo, setTitulo] = useState("");
@@ -94,6 +95,26 @@ useEffect(() => {
   }
 
   cargarProvincias();
+}, []);
+
+useEffect(() => {
+  async function cargarUsuario() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("nombre")
+      .eq("id", user.id)
+      .single();
+
+    setUsuario(data);
+  }
+
+  cargarUsuario();
 }, []);
 
 async function publicar() {
@@ -258,7 +279,7 @@ if (imageError) {
   return;
 }
 }
-  alert("Publicación creada");
+  router.push(`/publicacion/${data.id}`);
 }
 async function agregarImagen(
   e: React.ChangeEvent<HTMLInputElement>
@@ -269,9 +290,14 @@ async function agregarImagen(
 
   const nuevas = [...imagenes];
 
-  for (const archivo of Array.from(archivos)) {
-    if (nuevas.length >= 4) break;
+for (const archivo of Array.from(archivos)) {
+  if (nuevas.length >= 4) break;
 
+  if (!archivo.type.startsWith("image/")) {
+    continue;
+  }
+
+  try {
     const comprimida =
       await imageCompression(archivo, {
         maxSizeMB: 0.4,
@@ -279,7 +305,11 @@ async function agregarImagen(
       });
 
     nuevas.push(comprimida);
+
+  } catch (error) {
+    console.log("Imagen no compatible:", archivo.name);
   }
+}
 
   setImagenes(nuevas);
 }
@@ -291,6 +321,7 @@ function eliminarImagen(index: number) {
 
 const [categorias, setCategorias] = useState<string[]>([]);
 const [provincias, setProvincias] = useState<any[]>([]);
+const [usuario, setUsuario] = useState<any>(null);
   return (
     <main
       style={{
@@ -726,12 +757,27 @@ const seleccionado =
     Fotos ({imagenes.length}/4)
   </h2>
 
+  <label
+  style={{
+    display: "inline-block",
+    background: "#FF7A00",
+    color: "white",
+    padding: "12px 18px",
+    borderRadius: "10px",
+    fontWeight: "bold",
+    cursor: "pointer",
+  }}
+>
+  📷 Agregar fotos
+
   <input
     type="file"
     multiple
     accept="image/*"
     onChange={agregarImagen}
+    style={{ display: "none" }}
   />
+</label>
 
   <div
     style={{
@@ -850,7 +896,7 @@ const seleccionado =
     textDecoration: "none",
   }}
 >
-  👤 Usuario
+  👤 {usuario?.nombre || "Perfil"}
 </Link>
 </footer>
     </main>

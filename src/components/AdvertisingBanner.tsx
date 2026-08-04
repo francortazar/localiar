@@ -86,10 +86,12 @@ console.log("FILTROS QUE LLEGAN AL BANNER:", filters);
   >
     <a
   href={
-    campaña.link_type === "whatsapp"
-      ? `https://wa.me/${campaña.link_url}`
-      : campaña.link_url
-  }
+  campaña.link_type === "whatsapp"
+    ? `https://wa.me/${campaña.link_url}`
+    : campaña.link_url.startsWith("http")
+      ? campaña.link_url
+      : `https://${campaña.link_url}`
+}
   target="_blank"
   rel="noopener noreferrer"
 >

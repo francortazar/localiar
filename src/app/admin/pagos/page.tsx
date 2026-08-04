@@ -82,6 +82,27 @@ fechaPago.setDate(fechaPago.getDate() + 1);
 operacion.fechaPago = fechaPago.toLocaleDateString("es-AR");
 });
 
+
+
+operacionesAgrupadas.sort((a: any, b: any) => {
+
+  const convertirFecha = (fecha: string) => {
+    const partes = fecha.split("/");
+
+    return new Date(
+      Number(partes[2]),
+      Number(partes[1]) - 1,
+      Number(partes[0])
+    );
+  };
+
+  return (
+    convertirFecha(a.fechaPago).getTime() -
+    convertirFecha(b.fechaPago).getTime()
+  );
+
+});
+
 console.log("Operaciones agrupadas:", operacionesAgrupadas);
 
 setOperaciones(operacionesAgrupadas);
@@ -137,6 +158,20 @@ historialAgrupado.forEach((operacion: any) => {
 
   operacion.fechaFin =
     operacion.fechas[operacion.fechas.length - 1];
+});
+
+historialAgrupado.sort((a:any, b:any) => {
+
+  const fechaA = new Date(
+    a.fecha_pago_real
+  );
+
+  const fechaB = new Date(
+    b.fecha_pago_real
+  );
+
+  return fechaB.getTime() - fechaA.getTime();
+
 });
 
 console.log("Historial agrupado:", historialAgrupado);

@@ -38,13 +38,14 @@ export default function PagosHistorialTable({
               textAlign: "left",
             }}
           >
+            <th style={{ padding: "15px" }}>Transferido</th>
             <th style={{ padding: "15px" }}>Fecha pago</th>
             <th style={{ padding: "15px" }}>Local</th>
             <th style={{ padding: "15px" }}>Destinatario</th>
             <th style={{ padding: "15px" }}>Teléfono</th>
             <th style={{ padding: "15px" }}>Importe</th>
             <th style={{ padding: "15px" }}>Destino</th>
-            <th style={{ padding: "15px" }}>Transferido</th>
+            
           </tr>
         </thead>
 
@@ -71,8 +72,20 @@ export default function PagosHistorialTable({
                 }}
               >
                 <td style={{ padding: "15px" }}>
-                  {operacion.fecha}
-                </td>
+  {operacion.fecha_pago_real
+    ? new Date(operacion.fecha_pago_real).toLocaleString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-"}
+</td>
+
+<td style={{ padding: "15px" }}>
+  {operacion.fecha}
+</td>
 
                 <td style={{ padding: "15px" }}>
                   {operacion.publications?.titulo}
@@ -99,17 +112,7 @@ export default function PagosHistorialTable({
                  {operacion.publications?.alias_pago || "-"}
                 </td>
 
-                <td style={{ padding: "15px" }}>
-  {operacion.fecha_pago_real
-    ? new Date(operacion.fecha_pago_real).toLocaleString("es-AR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "-"}
-</td>
+                
               </tr>
             ))
           )}
