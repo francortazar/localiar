@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 
+
 export default function PublicacionPage() {
 
 const [categoriaPublicidad, setCategoriaPublicidad] = useState("");
@@ -229,16 +230,18 @@ async function publicarPregunta() {
       ]);
 
   if (error) {
-    alert(error.message);
-    return;
-  }
+  alert(error.message);
+  return;
+}
+
+if (!esAnfitrion) {
+  await enviarEmailNuevaPregunta(
+    id,
+    mensaje
+  );
+}
 
 setMensaje("");
-
-await enviarEmailNuevaPregunta(
-  id,
-  mensaje
-);
 
 cargarMensajes();
 }
