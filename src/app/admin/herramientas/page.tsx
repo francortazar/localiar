@@ -4,8 +4,27 @@ import { createNotification } from "../../lib/createNotification";
 import { sendEmail } from "../../lib/sendEmail";
 
 import { procesarPagoConfirmado } from "../../lib/procesarPagoConfirmado";
+import { enviarEmailsCancelacion } from "../../lib/enviarEmailsCancelacion";
 
 export default function HerramientasPage() {
+
+    async function probarEmailCancelacion() {
+  try {
+
+    await enviarEmailsCancelacion(
+      "ACA_OPERACION_ID_DE_PRUEBA"
+    );
+
+    alert("Emails enviados");
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert("Error enviando emails");
+
+  }
+}
 
     async function crearNotificacionPrueba() {
   await createNotification({
@@ -42,8 +61,6 @@ async function probarApiEmail() {
 }
 
 
-}
-
 async function probarEnviarEmailsReserva() {
   try {
     await procesarPagoConfirmado(
@@ -55,7 +72,7 @@ async function probarEnviarEmailsReserva() {
     console.error(error);
     alert("Error.");
   }
-
+}
 
   return (
     <main

@@ -6,6 +6,10 @@ import { useParams } from "next/navigation";
 import AdvertisingBanner from "@/components/AdvertisingBanner";
 import { obtenerCategorias } from "@/app/lib/categories";
 import { obtenerProvincias } from "@/app/lib/provinces";
+import {
+  enviarEmailNuevaPregunta,
+  enviarEmailRespuesta,
+} from "../../lib/enviarEmailsPreguntas";
 
 
 import Link from "next/link";
@@ -229,9 +233,14 @@ async function publicarPregunta() {
     return;
   }
 
-  setMensaje("");
+setMensaje("");
 
-  cargarMensajes();
+await enviarEmailNuevaPregunta(
+  id,
+  mensaje
+);
+
+cargarMensajes();
 }
   
 async function responderPregunta(
@@ -265,10 +274,15 @@ async function responderPregunta(
     return;
   }
 
-  setRespuesta("");
-  setPreguntaSeleccionada(null);
+setRespuesta("");
+setPreguntaSeleccionada(null);
 
-  cargarMensajes();
+await enviarEmailRespuesta(
+  parentId,
+  respuesta
+);
+
+cargarMensajes();
 }
 
 async function eliminarMensaje(

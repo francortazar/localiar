@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+import { enviarEmailsCancelacion } from "../lib/enviarEmailsCancelacion";
 
 
 export default function PerfilPage() {
@@ -192,13 +193,20 @@ if (errorCancelacion) {
   console.log("DELETE ERROR", deleteError);
 
   if (deleteError) {
-    alert(deleteError.message);
-    return;
-  }
+  alert(deleteError.message);
+  return;
+}
 
-  alert("Reserva cancelada correctamente.");
+// NUEVO:
+// enviar mail cancelación inquilino
+// enviar mail cancelación propietario
 
-  await cargarMisReservas();
+alert("Reserva cancelada correctamente.");
+
+await cargarMisReservas();
+await enviarEmailsCancelacion(
+  operacionId
+);
 }
 
 async function valorarReserva(
@@ -914,7 +922,12 @@ if (errorCancelacion) {
     }
 
     await cargar();
-    alert("Fecha cancelada correctamente.");
+
+await enviarEmailsCancelacion(
+  operacionId
+);
+
+alert("Fecha cancelada correctamente.");
   }
 
   async function cargar() {
