@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const { to, subject, html } = await request.json();
 
     const { data, error } = await resend.emails.send({
-      from: "Localiar <onboarding@resend.dev>",
+      from: "Localiar <noreply@localiar.com>",
       to,
       subject,
       html,

@@ -94,23 +94,14 @@ export async function enviarEmailRespuesta(
 ) {
 
   const { data: pregunta, error } =
-    await supabase
-      .from("publication_messages")
-      .select(`
-        id,
-        texto,
-        publication_id,
-        user_id,
-        profiles (
-          nombre,
-          email
-        ),
-        publications (
-          titulo
-        )
-      `)
-      .eq("id", parentId)
-      .single();
+  await supabase
+    .from("publication_messages")
+    .select("*")
+    .eq("id", parentId)
+    .single();
+
+console.log("PREGUNTA:", pregunta);
+console.log("ERROR:", error);
 
 
   if (error || !pregunta) {
@@ -121,82 +112,60 @@ export async function enviarEmailRespuesta(
     return;
   }
 
-
-  const usuarioPregunta =
-    Array.isArray(pregunta.profiles)
-      ? pregunta.profiles[0]
-      : pregunta.profiles;
-
-
-  const publicacion =
-    Array.isArray(pregunta.publications)
-      ? pregunta.publications[0]
-      : pregunta.publications;
+console.log("========== EMAIL RESPUESTA ==========");
+console.log("PREGUNTA:", pregunta);
+console.log("PROFILES:", pregunta?.profiles);
+console.log("PUBLICATIONS:", pregunta?.publications);
+console.log("=====================================");
 
 
-  if (!usuarioPregunta?.email) {
-    console.error(
-      "El usuario que preguntó no tiene email"
-    );
-    return;
-  }
+const { data: usuarioPregunta } =
+  await supabase
+    .from("profiles")
+    .select("nombre, email")
+    .eq("id", pregunta.user_id)
+    .single();
+
+console.log("USUARIO:", usuarioPregunta);
+
+const { data: publicacion } =
+  await supabase
+    .from("publications")
+    .select("titulo")
+    .eq("id", pregunta.publication_id)
+    .single();
+
+console.log("PUBLICACION:", publicacion);
+
+
+console.log("EMAIL:", usuarioPregunta?.email);
+console.log("USUARIO COMPLETO:", usuarioPregunta);
+
+if (!usuarioPregunta?.email) {
+  console.error("SIN EMAIL");
+  return;
+}
 
 
   const html = `
-    <h2>Respondieron tu pregunta en Localiar</h2>
+  <h1>PRUEBA LOCALIAR</h1>
 
-    <p>
-      Hola <strong>${usuarioPregunta.nombre}</strong>.
-    </p>
+  <p>
+    Este es un email de prueba.
+  </p>
+`;
+console.log("VOY A ENVIAR EL EMAIL");
+console.log("DESTINATARIO:", usuarioPregunta.email);
 
-    <p>
-      El propietario respondió tu consulta sobre:
-    </p>
+const resultado = await sendEmail({
+  to: "franciscocortazar02@gmail.com",
+  subject: "PRUEBA LOCALIAR",
+  html,
+});
 
-    <p>
-      <strong>${publicacion?.titulo || "Publicación"}</strong>
-    </p>
+console.log("RESULTADO SENDMAIL:", resultado);
 
-    <blockquote style="
-      border-left:4px solid #FF7A00;
-      padding-left:15px;
-      color:#444;
-      font-style:italic;
-    ">
-      ${respuesta}
-    </blockquote>
-
-    <p>
-      Ingresá a Localiar para continuar la conversación.
-    </p>
-
-    <p>
-      <a
-        href="https://localiar.netlify.app/publicacion/${pregunta.publication_id}"
-        style="
-          display:inline-block;
-          background:#FF7A00;
-          color:white;
-          text-decoration:none;
-          padding:12px 20px;
-          border-radius:8px;
-          font-weight:bold;
-        "
-      >
-        Ver publicación
-      </a>
-    </p>
-  `;
-
-
-  await sendEmail({
-    to: usuarioPregunta.email,
-    subject: "Respondieron tu pregunta en Localiar",
-    html,
-  });
-
-
-  console.log(
-    "Email de respuesta enviado correctamente."
-  );
+console.log(
+  "Email de respuesta enviado correctamente."
+);
 }
