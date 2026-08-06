@@ -233,8 +233,9 @@ if (error) {
       tenant_id: user.id,
       owner_id: publicacion.owner_id,
       amount: total,
-      payment_method: "Transferencia",
-      status: "Aprobado",
+      payment_method: "Mercado Pago",
+      status: "Pendiente",
+      localiar_fee: comision,
     },
   ]);
 
