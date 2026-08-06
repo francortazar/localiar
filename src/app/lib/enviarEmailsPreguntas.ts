@@ -147,19 +147,57 @@ if (!usuarioPregunta?.email) {
 }
 
 
-  const html = `
-  <h1>PRUEBA LOCALIAR</h1>
+const html = `
+    <h2>Respondieron tu pregunta en Localiar</h2>
 
-  <p>
-    Este es un email de prueba.
-  </p>
+    <p>
+      Hola <strong>${usuarioPregunta.nombre}</strong>.
+    </p>
+
+    <p>
+      El propietario respondió tu consulta sobre:
+    </p>
+
+    <p>
+      <strong>${publicacion?.titulo || "Publicación"}</strong>
+    </p>
+
+    <blockquote style="
+      border-left:4px solid #FF7A00;
+      padding-left:15px;
+      color:#444;
+      font-style:italic;
+    ">
+      ${respuesta}
+    </blockquote>
+
+    <p>
+      Ingresá a Localiar para continuar la conversación.
+    </p>
+
+    <p>
+      <a
+        href="https://localiar.com/publicacion/${pregunta.publication_id}"
+        style="
+          display:inline-block;
+          background:#FF7A00;
+          color:white;
+          text-decoration:none;
+          padding:12px 20px;
+          border-radius:8px;
+          font-weight:bold;
+        "
+      >
+        Ver publicación
+      </a>
+    </p>
 `;
 console.log("VOY A ENVIAR EL EMAIL");
 console.log("DESTINATARIO:", usuarioPregunta.email);
 
 const resultado = await sendEmail({
-  to: "franciscocortazar02@gmail.com",
-  subject: "PRUEBA LOCALIAR",
+  to: usuarioPregunta.email,
+  subject: "Respondieron tu pregunta en Localiar",
   html,
 });
 
