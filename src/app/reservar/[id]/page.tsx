@@ -178,6 +178,8 @@ function toggleCategoria(
   }
 }
 async function reservar() {
+
+  console.log("========== RESERVAR NUEVO FLUJO ==========");
   if (diasSeleccionados.length === 0) {
     alert("Seleccioná al menos un día");
     return;
@@ -185,9 +187,9 @@ async function reservar() {
 
   const confirmar = confirm(
     `Vas a reservar ${diasSeleccionados.length} día(s).\n\n` +
-    `Total: $${total.toLocaleString("es-AR")}\n\n` +
-    `El monto de resguardo será reintegrado al finalizar la reserva si el espacio es devuelto en las condiciones acordadas.\n\n` +
-    `¿Deseás continuar?`
+      `Total: $${total.toLocaleString("es-AR")}\n\n` +
+      `El monto de resguardo será reintegrado al finalizar la reserva si el espacio es devuelto en las condiciones acordadas.\n\n` +
+      `¿Deseás continuar?`
   );
 
   if (!confirmar) return;
@@ -201,59 +203,142 @@ async function reservar() {
     return;
   }
 
-const operacionId = crypto.randomUUID();
+  const operacionId = crypto.randomUUID();
 
-const reservas = diasSeleccionados.map(
-  (fecha) => ({
-    publication_id: publicationId,
-    inquilino_id: user.id,
-    fecha,
-    estado: "confirmada",
-    operacion_id: operacionId,
-  })
-);
+  console.log("VOY A CREAR RESERVATION_INTENT");
+console.log("OPERACION:", operacionId);
+console.log("FECHAS:", diasSeleccionados);
+console.log("TOTAL:", total);
+  // 1. Crear intención de reserva
+  const { error: intentError } = await supabase
+    .from("reservation_intents")
+    .insert([
+      {
+        operacion_id: operacionId,
+        publication_id: publicationId,
+        tenant_id: user.id,
+        fechas: diasSeleccionados,
+        alquiler,
+        comision,
+        resguardo,
+        total,
+        expires_at: new Date(
+          Date.now() + 15 * 60 * 1000
+        ).toISOString(),
+      },
+    ]);
 
-const { data: reservasCreadas, error } = await supabase
-  .from("reservations")
-  .insert(reservas)
-  .select();
+  if (intentError) {
+    console.error(
+      "Error creando intención de reserva:",
+      intentError
+    );
 
-if (error) {
-  alert(error.message);
-  return;
-}
+    alert("No se pudo iniciar la reserva.");
+    return;
+  }
 
-  const { error: paymentError } = await supabase
-  .from("reservation_payments")
-  .insert([
-    {
-      reservation_id: reservasCreadas[0].id,
-      operacion_id: operacionId,
-      publication_id: publicationId,
-      tenant_id: user.id,
-      owner_id: publicacion.owner_id,
-      amount: total,
-      payment_method: "Mercado Pago",
-      status: "Pendiente",
-      localiar_fee: comision,
-    },
-  ]);
-
-if (paymentError) {
-  console.error(
-    "Error creando pago:",
-    paymentError
+  console.log(
+    "INTENCION DE RESERVA CREADA:",
+    operacionId
   );
-  return;
-}
 
-await enviarEmailsReserva(operacionId);
+  // 2. Crear preferencia de Mercado Pago
+  const respuestaMercadoPago = await fetch(
+    "/api/mercadopago",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: publicacion.titulo,
+        quantity: 1,
+        unit_price: total,
+        operacion_id: operacionId,
+      }),
+    }
+  );
 
-  alert("Reserva realizada correctamente");
+  const datosMercadoPago =
+    await respuestaMercadoPago.json();
 
-  router.push("/perfil");
+  console.log(
+    "RESPUESTA MERCADO PAGO:",
+    datosMercadoPago
+  );
 
-  cargarReservas();
+  if (!respuestaMercadoPago.ok) {
+    console.error(
+      "Error creando preferencia:",
+      datosMercadoPago
+    );
+
+    alert(
+      "No se pudo iniciar el pago. Intentá nuevamente."
+    );
+
+    return;
+  }
+
+  // 3. Guardar preference_id
+  if (!datosMercadoPago.id) {
+    console.error(
+      "Mercado Pago no devolvió preference_id"
+    );
+
+    alert(
+      "No se pudo iniciar el pago. Intentá nuevamente."
+    );
+
+    return;
+  }
+
+  const { error: errorPreference } =
+    await supabase
+      .from("reservation_intents")
+      .update({
+        preference_id: datosMercadoPago.id,
+      })
+      .eq("operacion_id", operacionId);
+
+  if (errorPreference) {
+    console.error(
+      "Error guardando preference_id:",
+      errorPreference
+    );
+
+    alert(
+      "No se pudo preparar el pago. Intentá nuevamente."
+    );
+
+    return;
+  }
+
+  console.log(
+    "Preference ID guardado correctamente:",
+    datosMercadoPago.id
+  );
+
+  // 4. Enviar al checkout de Mercado Pago
+  if (!datosMercadoPago.init_point) {
+    console.error(
+      "Mercado Pago no devolvió init_point"
+    );
+
+    alert(
+      "No se pudo abrir el medio de pago."
+    );
+
+    return;
+  }
+
+  console.log("========== CHECKOUT MERCADO PAGO ==========");
+console.log("PREFERENCE ID:", datosMercadoPago.id);
+console.log("INIT POINT:", datosMercadoPago.init_point);
+
+  window.location.href = datosMercadoPago.init_point;
+
 }
   const alquiler =
     diasSeleccionados.length * precioDia;
