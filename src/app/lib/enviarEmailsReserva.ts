@@ -1,19 +1,23 @@
 import { createClient } from "@supabase/supabase-js";
-import { sendEmail } from "./sendEmail";
+import { enviarEmailServidor } from "./enviarEmailServidor";
 import { reservaPropietario } from "./emailTemplates/reservaPropietario";
 import { reservaInquilino } from "./emailTemplates/reservaInquilino";
 
 const supabase = createClient(
-process.env.NEXT_PUBLIC_SUPABASE_URL!,
-process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function enviarEmailsReserva(
-operacionId: string
+  operacionId: string
 ) {
-const { data: reservas, error } = await supabase
-.from("reservations")
-.select(`       *,
+  const {
+    data: reservas,
+    error,
+  } = await supabase
+    .from("reservations")
+    .select(`
+      *,
       publications (
         id,
         titulo,
@@ -32,180 +36,194 @@ const { data: reservas, error } = await supabase
         email
       )
     `)
-.eq("operacion_id", operacionId)
-.order("fecha", { ascending: true });
+    .eq("operacion_id", operacionId)
+    .order("fecha", {
+      ascending: true,
+    });
 
-if (error) {
-console.error(
-"ERROR OBTENIENDO RESERVAS PARA EMAILS:",
-error
-);
+  if (error) {
+    console.error(
+      "ERROR OBTENIENDO RESERVAS PARA EMAILS:",
+      error
+    );
 
+    throw new Error(
+      "No se pudo obtener las reservas."
+    );
+  }
 
-throw new Error(
-  "No se pudo obtener las reservas."
-);
+  if (!reservas || reservas.length === 0) {
+    throw new Error(
+      "No existen reservas para esa operación."
+    );
+  }
 
+  const reserva = reservas[0];
 
-}
+  const propietario =
+    reserva.publications.profiles;
 
-if (!reservas || reservas.length === 0) {
-throw new Error(
-"No existen reservas para esa operación."
-);
-}
+  const inquilino =
+    reserva.profiles;
 
-const reserva = reservas[0];
+  const publicacion =
+    reserva.publications;
 
-const propietario =
-reserva.publications.profiles;
+  const fechasReservadas =
+    reservas.map((r) => r.fecha);
 
-const inquilino =
-reserva.profiles;
+  const cantidadDias =
+    reservas.length;
 
-const publicacion =
-reserva.publications;
+  const montoAlquilerBase =
+    publicacion.precio_dia *
+    cantidadDias;
 
-const fechasReservadas =
-reservas.map((r) => r.fecha);
+  const comision =
+    montoAlquilerBase * 0.075;
 
-const cantidadDias =
-reservas.length;
+  const montoAlquilerInquilino =
+    montoAlquilerBase + comision;
 
-const montoAlquilerBase =
-publicacion.precio_dia *
-cantidadDias;
+  const montoAlquilerPropietario =
+    montoAlquilerBase - comision;
 
-const comision =
-montoAlquilerBase * 0.075;
+  const montoResguardo =
+    publicacion.resguardo;
 
-const montoAlquilerInquilino =
-montoAlquilerBase + comision;
+  const totalPagarInquilino =
+    montoAlquilerInquilino +
+    montoResguardo;
 
-const montoAlquilerPropietario =
-montoAlquilerBase - comision;
+  const totalRecibirPropietario =
+    montoAlquilerPropietario;
 
-const montoResguardo =
-publicacion.resguardo;
+  console.log(
+    "PREPARANDO EMAILS DE RESERVA:",
+    {
+      operacionId,
+      propietario:
+        propietario?.email,
+      inquilino:
+        inquilino?.email,
+      titulo:
+        publicacion?.titulo,
+      fechas:
+        fechasReservadas,
+    }
+  );
 
-const totalPagarInquilino =
-montoAlquilerInquilino +
-montoResguardo;
+  if (!propietario?.email) {
+    throw new Error(
+      "El propietario no tiene email."
+    );
+  }
 
-const totalRecibirPropietario =
-montoAlquilerPropietario;
+  if (!inquilino?.email) {
+    throw new Error(
+      "El inquilino no tiene email."
+    );
+  }
 
-console.log(
-"PREPARANDO EMAILS DE RESERVA:",
-{
-operacionId,
-propietario: propietario?.email,
-inquilino: inquilino?.email,
-titulo: publicacion?.titulo,
-fechas: fechasReservadas,
-}
-);
+  // ==========================================
+  // EMAIL AL PROPIETARIO
+  // ==========================================
 
-if (!propietario?.email) {
-throw new Error(
-"El propietario no tiene email."
-);
-}
+  const htmlPropietario =
+    reservaPropietario({
+      nombrePropietario:
+        propietario.nombre,
 
-if (!inquilino?.email) {
-throw new Error(
-"El inquilino no tiene email."
-);
-}
+      nombreInquilino:
+        inquilino.nombre,
 
-const htmlPropietario =
-reservaPropietario({
-nombrePropietario:
-propietario.nombre,
+      titulo:
+        publicacion.titulo,
 
+      urlPublicacion:
+        `https://localiar.com/publicacion/${publicacion.id}`,
 
-  nombreInquilino:
-    inquilino.nombre,
+      fechas:
+        fechasReservadas,
 
-  titulo:
-    publicacion.titulo,
+      totalAlquiler:
+        totalRecibirPropietario,
 
-  urlPublicacion:
-    `https://localiar.com/publicacion/${publicacion.id}`,
+      resguardo:
+        montoResguardo,
+    });
 
-  fechas:
+  await enviarEmailServidor({
+    to: propietario.email,
+
+    subject:
+      "Nueva reserva en Localiar",
+
+    html:
+      htmlPropietario,
+  });
+
+  console.log(
+    "EMAIL PROPIETARIO ENVIADO:",
+    propietario.email
+  );
+
+  // ==========================================
+  // EMAIL AL INQUILINO
+  // ==========================================
+
+  const htmlInquilino =
+    reservaInquilino({
+      nombreInquilino:
+        inquilino.nombre,
+
+      nombrePropietario:
+        propietario.nombre,
+
+      titulo:
+        publicacion.titulo,
+
+      urlPublicacion:
+        `https://localiar.com/publicacion/${publicacion.id}`,
+
+      fechas:
+        fechasReservadas,
+
+      totalAlquiler:
+        montoAlquilerInquilino,
+
+      resguardo:
+        montoResguardo,
+    });
+
+  await enviarEmailServidor({
+    to: inquilino.email,
+
+    subject:
+      "Reserva confirmada en Localiar",
+
+    html:
+      htmlInquilino,
+  });
+
+  console.log(
+    "EMAIL INQUILINO ENVIADO:",
+    inquilino.email
+  );
+
+  console.log({
+    operacionId,
+    propietario,
+    inquilino,
+    titulo:
+      publicacion.titulo,
     fechasReservadas,
-
-  totalAlquiler:
-    totalRecibirPropietario,
-
-  resguardo:
-    montoResguardo,
-});
-
-
-await sendEmail({
-to: propietario.email,
-subject:
-"Nueva reserva en Localiar",
-html: htmlPropietario,
-});
-
-console.log(
-"EMAIL PROPIETARIO ENVIADO:",
-propietario.email
-);
-
-const htmlInquilino =
-reservaInquilino({
-nombreInquilino:
-inquilino.nombre,
-
-
-  nombrePropietario:
-    propietario.nombre,
-
-  titulo:
-    publicacion.titulo,
-
-  urlPublicacion:
-    `https://localiar.com/publicacion/${publicacion.id}`,
-
-  fechas:
-    fechasReservadas,
-
-  totalAlquiler:
+    cantidadDias,
+    montoAlquilerBase,
     montoAlquilerInquilino,
-
-  resguardo:
+    montoAlquilerPropietario,
     montoResguardo,
-});
-
-
-await sendEmail({
-to: inquilino.email,
-subject:
-"Reserva confirmada en Localiar",
-html: htmlInquilino,
-});
-
-console.log(
-"EMAIL INQUILINO ENVIADO:",
-inquilino.email
-);
-
-console.log({
-operacionId,
-propietario,
-inquilino,
-titulo: publicacion.titulo,
-fechasReservadas,
-cantidadDias,
-montoAlquilerBase,
-montoAlquilerInquilino,
-montoAlquilerPropietario,
-montoResguardo,
-totalPagarInquilino,
-totalRecibirPropietario,
-});
+    totalPagarInquilino,
+    totalRecibirPropietario,
+  });
 }
