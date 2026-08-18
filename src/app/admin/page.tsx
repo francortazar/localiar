@@ -55,6 +55,13 @@ export default function AdminPage() {
   href="/admin/pagos-reservas"
 />
 
+<AdminCard
+  icon="🏦"
+  title="Pagos a propietarios"
+  description="Transferencias pendientes e historial de pagos realizados a propietarios."
+  href="/admin/pagos-propietarios"
+/>
+
         <AdminCard
           icon="📅"
           title="Reservas"
