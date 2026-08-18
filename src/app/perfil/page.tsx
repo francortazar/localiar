@@ -26,8 +26,69 @@ export default function PerfilPage() {
   const [mostrarFavoritos, setMostrarFavoritos] = useState(false);
   const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
   const [mostrarMovimientos, setMostrarMovimientos] = useState(false);
+  const [movimientosIngresos, setMovimientosIngresos] = useState<any[]>([]);
 
 
+  async function cargarMovimientosIngresos() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data, error } = await supabase
+    .from("reservation_payments")
+    .select(`
+      id,
+      reservation_id,
+      publication_id,
+      amount,
+      owner_payment_status,
+      owner_paid_at,
+      created_at,
+
+      publications (
+        titulo,
+        resguardo
+      ),
+
+      reservations (
+        operacion_id
+      )
+    `)
+    .eq("owner_id", user.id)
+    .eq("owner_payment_status", "pagado")
+    .order("owner_paid_at", { ascending: false });
+
+  if (error) {
+    console.error("ERROR CARGANDO MOVIMIENTOS:", error);
+    return;
+  }
+
+  const movimientos = (data || []).map((pago: any) => {
+    const totalCobrado = Number(pago.amount || 0);
+
+    const resguardo = Number(
+      pago.publications?.resguardo || 0
+    );
+
+    const alquilerConComision =
+      totalCobrado - resguardo;
+
+    const alquilerBase =
+      alquilerConComision / 1.075;
+
+    const importePropietario =
+      alquilerBase * 0.925;
+
+    return {
+      ...pago,
+      importePropietario,
+    };
+  });
+
+  setMovimientosIngresos(movimientos);
+}
 
 
 
@@ -48,6 +109,7 @@ export default function PerfilPage() {
   cargarFavoritos();
   cargarHistorialPublicaciones();
   cargarNotificaciones();
+  cargarMovimientosIngresos();
 }, []);
 
 async function cargarFavoritos() {
@@ -2269,34 +2331,128 @@ cargarMisReservas();
   {mostrarMovimientos && (
     <>
       <div style={{ marginBottom: "30px" }}>
-        <h3
+  <h3
+    style={{
+      color: "#198754",
+      marginBottom: "15px",
+    }}
+  >
+    Ingresos
+  </h3>
+
+  {movimientosIngresos.length === 0 ? (
+    <p style={{ color: "#888" }}>
+      Todavía no hay ingresos registrados.
+    </p>
+  ) : (
+    <>
+      <div
+        style={{
+          background: "#16351F",
+          borderRadius: "12px",
+          padding: "15px",
+          marginBottom: "15px",
+        }}
+      >
+        <div
           style={{
-            color: "#198754",
+            color: "#999",
+            fontSize: "13px",
+          }}
+        >
+          Total cobrado
+        </div>
+
+        <div
+          style={{
+            color: "#4ADE80",
+            fontSize: "26px",
+            fontWeight: "bold",
+            marginTop: "4px",
+          }}
+        >
+          $
+          {movimientosIngresos
+            .reduce(
+              (total, movimiento) =>
+                total +
+                Number(
+                  movimiento.importePropietario || 0
+                ),
+              0
+            )
+            .toLocaleString("es-AR", {
+              maximumFractionDigits: 0,
+            })}
+        </div>
+      </div>
+
+      {movimientosIngresos.map((movimiento) => (
+        <div
+          key={movimiento.id}
+          style={{
+            borderBottom:
+              "1px solid rgba(255,255,255,0.1)",
+            paddingBottom: "15px",
             marginBottom: "15px",
           }}
         >
-          Ingresos
-        </h3>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "15px",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  color: "#FFFFFF",
+                  fontWeight: "bold",
+                }}
+              >
+                {movimiento.publications?.titulo ||
+                  "Reserva"}
+              </div>
 
-        <p style={{ color: "#888" }}>
-          Todavía no hay movimientos.
-        </p>
-      </div>
+              {movimiento.owner_paid_at && (
+                <div
+                  style={{
+                    color: "#888",
+                    fontSize: "13px",
+                    marginTop: "5px",
+                  }}
+                >
+                  📅{" "}
+                  {new Date(
+                    movimiento.owner_paid_at
+                  ).toLocaleDateString("es-AR")}
+                </div>
+              )}
+            </div>
 
-      <div>
-        <h3
-          style={{
-            color: "#C62828",
-            marginBottom: "15px",
-          }}
-        >
-          Egresos
-        </h3>
+            <div
+              style={{
+                color: "#4ADE80",
+                fontWeight: "bold",
+                whiteSpace: "nowrap",
+              }}
+            >
+              + $
+              {Number(
+                movimiento.importePropietario || 0
+              ).toLocaleString("es-AR", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
+          </div>
+        </div>
+      ))}
+    </>
+  )}
+</div>
 
-        <p style={{ color: "#888" }}>
-          Todavía no hay movimientos.
-        </p>
-      </div>
+      
     </>
   )}
 </div>

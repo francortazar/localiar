@@ -24,6 +24,15 @@ const [provinciaPublicidad, setProvinciaPublicidad] = useState("");
 const [categorias, setCategorias] =
   useState<any[]>([]);
 
+const [publicacionesSimilares, setPublicacionesSimilares] =
+  useState<any[]>([]);
+
+const [slideSimilar, setSlideSimilar] =
+  useState(0);
+
+  const [esMobile, setEsMobile] =
+  useState(false);
+
   const [fechasDisponibles, setFechasDisponibles] =
   useState<string[]>([]);
 
@@ -74,6 +83,28 @@ const [preguntaSeleccionada,
   cargarMensajes();
   cargarUsuarioActual();
   verificarFavorito();
+}, []);
+
+useEffect(() => {
+  function actualizarTamaño() {
+    setEsMobile(
+      window.innerWidth < 768
+    );
+  }
+
+  actualizarTamaño();
+
+  window.addEventListener(
+    "resize",
+    actualizarTamaño
+  );
+
+  return () => {
+    window.removeEventListener(
+      "resize",
+      actualizarTamaño
+    );
+  };
 }, []);
 
 function compartirWhatsapp() {
@@ -362,6 +393,11 @@ const { data: categoriasData } =
 
 setCategorias(categoriasData || []);
 
+await cargarPublicacionesSimilares(
+  data.provincia,
+  categoriasData || []
+);
+
 const todasLasCategorias = await obtenerCategorias();
 
 const categoriaId =
@@ -416,6 +452,73 @@ if (
     }
   }
 } 
+
+async function cargarPublicacionesSimilares(
+  provincia: string,
+  categoriasPublicacion: any[]
+) {
+  if (!provincia || categoriasPublicacion.length === 0) {
+    setPublicacionesSimilares([]);
+    return;
+  }
+
+  const nombresCategorias =
+    categoriasPublicacion.map(
+      (cat) => cat.categoria
+    );
+
+  const { data, error } =
+    await supabase
+      .from("publications")
+      .select(`
+        id,
+        titulo,
+        precio_dia,
+        provincia,
+        disponibilidad_total,
+        publication_images (
+          image_url,
+          orden
+        ),
+        publication_categories (
+          categoria
+        )
+      `)
+      .eq("provincia", provincia)
+      .neq("id", id)
+      .limit(30);
+
+  if (error) {
+    console.error(
+      "Error cargando publicaciones similares:",
+      error
+    );
+    return;
+  }
+
+  const similares =
+    (data || []).filter((publicacion) =>
+      publicacion.publication_categories?.some(
+        (cat: any) =>
+          nombresCategorias.includes(
+            cat.categoria
+          )
+      )
+    );
+
+    console.log(
+  "PUBLICACIONES SIMILARES:",
+  {
+    provincia,
+    categorias: nombresCategorias,
+    encontradas: data,
+    similares,
+  }
+);
+
+  setPublicacionesSimilares(similares);
+  setSlideSimilar(0);
+}
 
 
 
@@ -1266,6 +1369,198 @@ const disponible =
     })}
   </div>
 </section>
+
+{/* PUBLICACIONES SIMILARES */}
+
+{publicacionesSimilares.length > 0 && (
+  <section style={cardStyle}>
+    <h3 style={titleStyle}>
+      Publicaciones similares
+    </h3>
+
+    <p
+      style={{
+        color: "#999",
+        fontSize: "14px",
+        marginBottom: "15px",
+      }}
+    >
+      Otras publicaciones de {publicacion.provincia}
+      relacionadas con esta publicación.
+    </p>
+
+    <div
+      style={{
+        position: "relative",
+      }}
+    >
+      {/* FLECHA IZQUIERDA */}
+
+      {slideSimilar > 0 && (
+        <button
+          onClick={() =>
+            setSlideSimilar(
+              (prev) => prev - 1
+            )
+          }
+          style={{
+            position: "absolute",
+            left: "-10px",
+            top: "50%",
+            transform:
+              "translateY(-50%)",
+            zIndex: 5,
+            width: "38px",
+            height: "38px",
+            borderRadius: "50%",
+            border: "none",
+            background: "#FF7A00",
+            color: "white",
+            fontSize: "18px",
+            fontWeight: "bold",
+            cursor: "pointer",
+          }}
+        >
+          ◀
+        </button>
+      )}
+
+      {/* PUBLICACIONES */}
+
+      <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: esMobile
+      ? "1fr"
+      : "repeat(4, minmax(0, 1fr))",
+    gap: "12px",
+  }}
+  className="publicaciones-similares-grid"
+>
+        {publicacionesSimilares
+          .slice(
+            slideSimilar * 4,
+            slideSimilar * 4 + 4
+          )
+          .map((similar) => {
+            const imagen =
+              similar.publication_images
+                ?.sort(
+                  (a: any, b: any) =>
+                    a.orden - b.orden
+                )[0]?.image_url;
+
+            return (
+              <Link
+                key={similar.id}
+                href={`/publicacion/${similar.id}`}
+                style={{
+                  textDecoration: "none",
+                  color: "white",
+                  background: "#1a1a1a",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  border:
+                    "1px solid #333",
+                }}
+              >
+                {imagen ? (
+                  <img
+                    src={imagen}
+                    alt=""
+                    style={{
+                      width: "100%",
+                      height: "150px",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "150px",
+                      background:
+                        "linear-gradient(135deg,#0D1F3D,#FF7A00)",
+                    }}
+                  />
+                )}
+
+                <div
+                  style={{
+                    padding: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: "bold",
+                      marginBottom: "6px",
+                      overflow: "hidden",
+                      textOverflow:
+                        "ellipsis",
+                      whiteSpace:
+                        "nowrap",
+                    }}
+                  >
+                    {similar.titulo}
+                  </div>
+
+                  <div
+                    style={{
+                      color: "#FF7A00",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    $
+                    {Number(
+                      similar.precio_dia
+                    ).toLocaleString(
+                      "es-AR"
+                    )}
+                    /día
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+      </div>
+
+      {/* FLECHA DERECHA */}
+
+      {slideSimilar <
+        Math.ceil(
+          publicacionesSimilares.length / 4
+        ) - 1 && (
+        <button
+          onClick={() =>
+            setSlideSimilar(
+              (prev) => prev + 1
+            )
+          }
+          style={{
+            position: "absolute",
+            right: "-10px",
+            top: "50%",
+            transform:
+              "translateY(-50%)",
+            zIndex: 5,
+            width: "38px",
+            height: "38px",
+            borderRadius: "50%",
+            border: "none",
+            background: "#FF7A00",
+            color: "white",
+            fontSize: "18px",
+            fontWeight: "bold",
+            cursor: "pointer",
+          }}
+        >
+          ▶
+        </button>
+      )}
+    </div>
+  </section>
+)}
 
        
       </div>

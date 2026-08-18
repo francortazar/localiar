@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { enviarEmailPagoPropietario } from "../../lib/enviarEmailPagoPropietario";
 
 export default function PagosPropietariosPage() {
  const [pagos, setPagos] = useState<any[]>([]);
@@ -401,11 +402,13 @@ async function confirmarPago() {
 
   setProcesandoPago(true);
 
+  const fechaPago = new Date().toISOString();
+
   const { error } = await supabase
     .from("reservation_payments")
     .update({
       owner_payment_status: "pagado",
-      owner_paid_at: new Date().toISOString(),
+      owner_paid_at: fechaPago,
     })
     .eq("id", pagoSeleccionado.id);
 
@@ -414,6 +417,21 @@ async function confirmarPago() {
     console.error(error);
     setProcesandoPago(false);
     return;
+  }
+
+  try {
+    await enviarEmailPagoPropietario(
+      pagoSeleccionado.id
+    );
+  } catch (error) {
+    console.error(
+      "ERROR ENVIANDO EMAIL DE PAGO:",
+      error
+    );
+
+    alert(
+      "El pago fue registrado correctamente, pero no se pudo enviar el email al propietario."
+    );
   }
 
   setPagoSeleccionado(null);

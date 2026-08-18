@@ -614,6 +614,41 @@ onChange={(e) =>
 
   <div
     style={{
+      background: "#3A1F00",
+      border: "2px solid #FF7A00",
+      borderRadius: "12px",
+      padding: "16px",
+      marginBottom: "18px",
+    }}
+  >
+    <p
+      style={{
+        margin: 0,
+        color: "#FF7A00",
+        fontSize: "17px",
+        fontWeight: "bold",
+        marginBottom: "8px",
+      }}
+    >
+      ⚠️ Importante sobre la disponibilidad
+    </p>
+
+    <p
+      style={{
+        margin: 0,
+        color: "#FFFFFF",
+        fontSize: "15px",
+        lineHeight: "1.5",
+      }}
+    >
+      Si no seleccionás ninguna fecha en el calendario,
+      el sistema interpretará que el espacio está
+      <strong> disponible todos los días</strong>.
+    </p>
+  </div>
+
+  <div
+    style={{
       display: "flex",
       gap: "10px",
       marginBottom: "15px",
@@ -858,6 +893,150 @@ const seleccionado =
           PUBLICAR
           
         </button>
+
+                {/* INFORMACIÓN LEGAL */}
+
+        <div
+          style={{
+            marginTop: "18px",
+            color: "#aaaaaa",
+            fontSize: "13px",
+            lineHeight: "1.6",
+          }}
+        >
+          <p
+            style={{
+              marginBottom: "10px",
+              fontWeight: "bold",
+              color: "#aaaaaa",
+            }}
+          >
+            Información legal y condiciones de publicación
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            Al publicar este espacio en Localiar, el propietario declara
+            bajo su responsabilidad que toda la información, documentación,
+            fotografías, precios, características, condiciones de uso,
+            disponibilidad y demás datos proporcionados son verdaderos,
+            completos, actuales y corresponden efectivamente al espacio
+            ofrecido.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            Localiar actúa exclusivamente como una plataforma tecnológica
+            e intermediario que facilita el contacto y la gestión de
+            operaciones entre propietarios y usuarios. Localiar no es
+            propietario, locador, explotador comercial, administrador ni
+            responsable directo de los espacios publicados por terceros,
+            salvo respecto de aquellas obligaciones que expresamente
+            correspondan a Localiar por la legislación aplicable.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            El propietario es el único responsable por la exactitud,
+            legalidad y legitimidad de la información incorporada en su
+            publicación, así como por las condiciones reales del espacio,
+            su estado de conservación, seguridad, características,
+            disponibilidad, precio, documentación y cualquier otra
+            circunstancia relacionada con el inmueble, establecimiento,
+            actividad o servicio ofrecido.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            Asimismo, el propietario declara ser mayor de edad y contar con
+            capacidad legal suficiente para publicar el espacio y celebrar
+            las operaciones que pudieran derivarse de su publicación.
+            Declara también que posee, mantiene vigentes y se encuentra en
+            condiciones de acreditar todas las habilitaciones, permisos,
+            licencias, autorizaciones, matrículas, seguros, certificaciones
+            y demás requisitos exigidos por las autoridades nacionales,
+            provinciales y municipales competentes, así como por organismos
+            privados o entidades regulatorias que pudieran resultar
+            aplicables a la actividad desarrollada en el espacio publicado.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            El propietario manifiesta que la actividad comercial,
+            profesional o de cualquier otra naturaleza desarrollada en el
+            espacio publicado se encuentra encuadrada dentro del marco
+            legal aplicable y que no utilizará Localiar para ofrecer,
+            promocionar, facilitar o concretar actividades ilícitas,
+            prohibidas, fraudulentas o que requieran autorizaciones de las
+            cuales no disponga.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            El propietario será responsable de mantener actualizada la
+            información de su publicación y deberá modificar o retirar
+            inmediatamente cualquier dato que haya dejado de ser correcto,
+            especialmente la disponibilidad, precio, condiciones de uso,
+            características del espacio y cualquier requisito legal
+            necesario para su utilización.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            La publicación de un espacio en Localiar no implica que Localiar
+            certifique, verifique, garantice ni avale la exactitud de la
+            información proporcionada por el propietario, ni que haya
+            realizado una inspección física, técnica, comercial, sanitaria,
+            profesional, edilicia o administrativa del espacio, salvo que
+            expresamente se indique lo contrario.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            El propietario asume la responsabilidad por cualquier reclamo,
+            sanción, multa, daño, perjuicio, incumplimiento contractual,
+            infracción administrativa, tributaria, comercial, profesional,
+            laboral, sanitaria, civil o de cualquier otra naturaleza que
+            pudiera derivarse de la actividad desarrollada en el espacio o
+            de la información proporcionada para su publicación, en la
+            medida permitida por la legislación aplicable.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            El propietario también declara que cuenta con los derechos,
+            autorizaciones y permisos necesarios respecto de las fotografías,
+            textos, marcas, nombres comerciales, logotipos, documentos y
+            demás contenidos que incorpore a Localiar, y que dichos contenidos
+            no infringen derechos de terceros.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            Localiar podrá suspender, ocultar o retirar una publicación
+            cuando detecte información presuntamente falsa, incompleta,
+            engañosa, desactualizada o contraria a la legislación aplicable,
+            a las condiciones de uso de la plataforma o a los intereses de
+            seguridad de sus usuarios, sin que ello implique asumir
+            responsabilidad sobre la información originalmente proporcionada
+            por el propietario.
+          </p>
+
+          <p style={{ marginBottom: "10px" }}>
+            La utilización de Localiar supone la aceptación de las
+            condiciones de uso de la plataforma y de las responsabilidades
+            que correspondan a cada usuario según su participación en la
+            operación. Ninguna disposición de estas condiciones pretende
+            excluir o limitar derechos que legalmente resulten
+            irrenunciables, ni las responsabilidades que por ley no puedan
+            ser excluidas o limitadas.
+          </p>
+
+          <p
+            style={{
+              marginTop: "16px",
+              fontWeight: "bold",
+              color: "#aaaaaa",
+            }}
+          >
+            Al presionar “PUBLICAR”, el propietario declara haber leído,
+            comprendido y aceptado estas condiciones y confirma que la
+            información proporcionada es verdadera y que cuenta con las
+            autorizaciones y habilitaciones necesarias para ofrecer el
+            espacio publicado.
+          </p>
+        </div>
+        
       </div>
       <footer
   style={{

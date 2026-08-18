@@ -84,6 +84,13 @@ export default function AdminPage() {
         />
 
         <AdminCard
+  icon="⏰"
+  title="Publicaciones vencidas"
+  description="Publicaciones que ya no tienen fechas disponibles para alquilar."
+  href="/admin/publicaciones-vencidas"
+/>
+
+        <AdminCard
           icon="⭐"
           title="Valoraciones"
           description="Revisar y moderar opiniones."
