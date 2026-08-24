@@ -40,3 +40,6 @@ export async function enviarEmailPublicacionVencida(
     throw new Error("No se pudo enviar el email");
   }
 }
+export default function PublicacionesPage() {
+  return null;
+}
