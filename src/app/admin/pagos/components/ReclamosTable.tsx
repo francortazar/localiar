@@ -4,11 +4,15 @@ import { useState } from "react";
 import ImageViewer from "./ImageViewer";
 import ReclamoConfirmModal from "./ReclamoConfirmModal";
 import { supabase } from "../../../lib/supabase";
+import { enviarEmailResguardo } from "@/app/lib/enviarEmailResguardo";
+import { enviarEmailsRechazoResguardo } from "@/app/lib/enviarEmailsRechazoResguardo";
 
 export default function ReclamosTable({
   reclamos,
+  onReclamoActualizado,
 }: {
   reclamos: any[];
+  onReclamoActualizado: (id: string, status: string) => void;
 }) {
 
     const [imagenesAbiertas, setImagenesAbiertas] = useState<string[] | null>(null);
@@ -17,18 +21,23 @@ export default function ReclamosTable({
     const aprobarReclamo = async () => {
   if (!reclamoAprobar) return;
 
-  const { error } = await supabase
-    .from("owner_claims")
-    .update({ status: "approved" })
-    .eq("id", reclamoAprobar.id);
+const { error } = await supabase
+  .from("owner_claims")
+  .update({
+    status: "approved",
+    
+  })
+  .eq("id", reclamoAprobar.id);
 
   if (error) {
     console.error("Error al aprobar reclamo:", error);
     return;
   }
 
-  console.log("Reclamo aprobado correctamente");
-  setReclamoAprobar(null);
+await enviarEmailResguardo(reclamoAprobar.id);
+
+onReclamoActualizado(reclamoAprobar.id, "approved");
+setReclamoAprobar(null);
 };
 
 const rechazarReclamo = async () => {
@@ -36,7 +45,9 @@ const rechazarReclamo = async () => {
 
   const { error } = await supabase
     .from("owner_claims")
-    .update({ status: "rejected" })
+    .update({
+      status: "rejected",
+    })
     .eq("id", reclamoRechazar.id);
 
   if (error) {
@@ -44,7 +55,10 @@ const rechazarReclamo = async () => {
     return;
   }
 
-  console.log("Reclamo rechazado correctamente");
+  await enviarEmailsRechazoResguardo(reclamoRechazar.id);
+
+  onReclamoActualizado(reclamoRechazar.id, "rejected");
+
   setReclamoRechazar(null);
 };
 
@@ -134,15 +148,15 @@ const rechazarReclamo = async () => {
 </td>
 
 <td style={{ padding: "15px" }}>
-  {reclamo.reservas?.[0]?.publications?.profiles?.nombre || "-"}
+  {reclamo.propietario?.nombre || "-"}
 </td>
 
 <td style={{ padding: "15px" }}>
-  {reclamo.reservas?.[0]?.publications?.profiles?.telefono || "-"}
+  {reclamo.propietario?.telefono || "-"}
 </td>
 
 <td style={{ padding: "15px" }}>
-  {reclamo.reservas?.[0]?.publications?.profiles?.email || "-"}
+  {reclamo.propietario?.email || "-"}
 </td>
 
 <td style={{ padding: "15px" }}>
@@ -249,9 +263,9 @@ const rechazarReclamo = async () => {
   tipo="aprobar"
     monto={reclamoAprobar.reservas?.[0]?.publications?.resguardo || 0}
     propietario={
-      reclamoAprobar.reservas?.[0]?.publications?.profiles?.nombre ||
-      "Propietario"
-    }
+  reclamoAprobar.reservas?.[0]?.propietario?.nombre ||
+  "Propietario"
+}
     alias={
       reclamoAprobar.reservas?.[0]?.publications?.alias_pago || null
     }

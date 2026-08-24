@@ -156,6 +156,18 @@ style={{ display: "none" }}
 
   if (!user) return;
 
+  const { data: reserva, error: reservaError } = await supabase
+  .from("reservations")
+  .select("publication_id")
+  .eq("operacion_id", operacionId)
+  .limit(1)
+  .single();
+
+if (reservaError) {
+  alert("No se encontró la reserva.");
+  return;
+}
+
   const subirImagen = async (file: File, index: number) => {
   const fileName = `${operacionId}-${Date.now()}-${index}.jpg`;
 
@@ -182,10 +194,11 @@ style={{ display: "none" }}
   const { data: claim, error } = await supabase
   .from("owner_claims")
   .insert({
-    operacion_id: operacionId,
-    owner_id: user.id,
-    description: descargo,
-  })
+  operacion_id: operacionId,
+  publication_id: reserva.publication_id,
+  owner_id: user.id,
+  description: descargo,
+})
   .select("id")
   .single();
 

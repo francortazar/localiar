@@ -4,18 +4,18 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import ReclamosTable from "./components/ReclamosTable";
 import ReclamosHistorialTable from "./components/ReclamosHistorialTable";
-import PagosFilters from "./components/PagosFilters";
-import PagosTable from "./components/PagosTable";
-import PagosResumen from "./components/PagosResumen";
+
+
+
 import CancelacionesTable from "./components/CancelacionesTable";
-import PagosHistorialTable from "./components/PagosHistorialTable";
+
 import HistorialCancelacionesTable from "./components/HistorialCancelacionesTable";
 
 
 
     export default function PagosPage() {
-  const [operaciones, setOperaciones] = useState<any[]>([]);
-  const [historial, setHistorial] = useState<any[]>([]);
+  
+
   const [reclamos, setReclamos] = useState<any[]>([]);
   const [historialReclamos, setHistorialReclamos] = useState<any[]>([]);
   const [cancelaciones, setCancelaciones] = useState<any[]>([]);
@@ -23,160 +23,7 @@ import HistorialCancelacionesTable from "./components/HistorialCancelacionesTabl
 
   useEffect(() => {
     async function cargarPagos() {
-      const { data, error } = await supabase
-  .from("reservations")
-  .select(`
-  id,
-  operacion_id,
-  fecha,
-  estado,
-  destino,
-  publications (
-    titulo,
-    precio_dia,
-    owner_id,
-    alias_pago,
-    profiles (
-      nombre,
-      email,
-      telefono
-    )
-  )
-`)
-        .eq("estado", "confirmada")
-        .eq("estado_pago", "pagar");
-
-      if (error) {
-        console.error("Error cargando pagos:", error);
-        return;
-      }
-console.log(data);
-      const operacionesAgrupadas = Object.values(
-  (data || []).reduce((acc: any, reserva: any) => {
-    if (!acc[reserva.operacion_id]) {
-      acc[reserva.operacion_id] = {
-  ...reserva,
-  fechas: [reserva.fecha],
-};
-    } else {
-      acc[reserva.operacion_id].fechas.push(reserva.fecha);
-    }
-
-    return acc;
-  }, {})
-);
-
-operacionesAgrupadas.forEach((operacion: any) => {
-  operacion.fechas.sort();
-
-  operacion.cantidadDias = operacion.fechas.length;
-
-  operacion.fechaInicio = operacion.fechas[0];
-
-  operacion.fechaFin =
-    operacion.fechas[operacion.fechas.length - 1];
-
-  const fechaPago = new Date(operacion.fechaFin);
-fechaPago.setDate(fechaPago.getDate() + 1);
-
-operacion.fechaPago = fechaPago.toLocaleDateString("es-AR");
-});
-
-
-
-operacionesAgrupadas.sort((a: any, b: any) => {
-
-  const convertirFecha = (fecha: string) => {
-    const partes = fecha.split("/");
-
-    return new Date(
-      Number(partes[2]),
-      Number(partes[1]) - 1,
-      Number(partes[0])
-    );
-  };
-
-  return (
-    convertirFecha(a.fechaPago).getTime() -
-    convertirFecha(b.fechaPago).getTime()
-  );
-
-});
-
-console.log("Operaciones agrupadas:", operacionesAgrupadas);
-
-setOperaciones(operacionesAgrupadas);
-
-      const { data: dataHistorial, error: errorHistorial } = await supabase
-  .from("reservations")
-  .select(`
-  id,
-  operacion_id,
-  fecha,
-  fecha_pago_real,
-  estado_pago,
-  destino,
-    publications (
-  titulo,
-  precio_dia,
-  owner_id,
-  alias_pago,
-  profiles (
-    nombre,
-    email,
-    telefono
-  )
-)
-  `)
-  .eq("estado_pago", "pagado");
-
-if (errorHistorial) {
-  console.error("Error cargando historial:", errorHistorial);
-  return;
-}
-const historialAgrupado = Object.values(
-  (dataHistorial || []).reduce((acc: any, reserva: any) => {
-    if (!acc[reserva.operacion_id]) {
-      acc[reserva.operacion_id] = {
-        ...reserva,
-        fechas: [reserva.fecha],
-      };
-    } else {
-      acc[reserva.operacion_id].fechas.push(reserva.fecha);
-    }
-
-    return acc;
-  }, {})
-);
-
-historialAgrupado.forEach((operacion: any) => {
-  operacion.fechas.sort();
-
-  operacion.cantidadDias = operacion.fechas.length;
-
-  operacion.fechaInicio = operacion.fechas[0];
-
-  operacion.fechaFin =
-    operacion.fechas[operacion.fechas.length - 1];
-});
-
-historialAgrupado.sort((a:any, b:any) => {
-
-  const fechaA = new Date(
-    a.fecha_pago_real
-  );
-
-  const fechaB = new Date(
-    b.fecha_pago_real
-  );
-
-  return fechaB.getTime() - fechaA.getTime();
-
-});
-
-console.log("Historial agrupado:", historialAgrupado);
-
-setHistorial(historialAgrupado);
+      
 
 const {
   data: dataCancelaciones,
@@ -272,52 +119,80 @@ if (errorReclamos) {
   console.error("Error cargando reclamos:", errorReclamos);
   return;
 }
+console.log("OPERACION_ID DEL RECLAMO:", dataReclamos?.[0]?.operacion_id);
+console.log("RECLAMO COMPLETO:", dataReclamos?.[0]);
 
 const reclamosCompletos = await Promise.all(
   (dataReclamos || []).map(async (reclamo: any) => {
+
     const { data: reservas, error: errorReservas } = await supabase
-      .from("reservations")
-      .select(`
-  id,
-  fecha,
-  inquilino_id,
-  profiles!reservations_inquilino_id_fkey (
-    nombre,
-    telefono,
-    email
-  ),
- publications (
-  titulo,
-  resguardo,
-  owner_id,
-  alias_pago,
-  profiles (
-    
+  .from("reservations")
+  .select(`
+    id,
+    fecha,
+    inquilino_id,
+    publication_id,
+    profiles!reservations_inquilino_id_fkey (
       nombre,
       telefono,
       email
     )
-  )
-`)
-      .eq("operacion_id", reclamo.operacion_id);
+  `)
+  .eq("operacion_id", reclamo.operacion_id);
 
-    if (errorReservas) {
-  console.error("Mensaje:", errorReservas.message);
-  console.error("Código:", errorReservas.code);
-  console.error("Detalles:", errorReservas.details);
-  console.error("Hint:", errorReservas.hint);
-
-  return reclamo;
+if (errorReservas) {
+  console.error("ERROR RESERVA:", errorReservas);
 }
 
+const reservasConPublicacion = await Promise.all(
+  (reservas || []).map(async (reserva: any) => {
+    const { data: publicacion } = await supabase
+      .from("publications")
+      .select(`
+        titulo,
+        resguardo,
+        owner_id,
+        alias_pago
+      `)
+      .eq("id", reserva.publication_id)
+      .single();
+
     return {
-      ...reclamo,
-      reservas: reservas || [],
+      ...reserva,
+      publications: publicacion,
     };
   })
 );
 
-console.log("Reclamos completos:", reclamosCompletos);
+    if (errorReservas) {
+      console.error("ERROR RESERVA:", errorReservas);
+    }
+    const { data: propietario, error: errorPropietario } = await supabase
+  .from("profiles")
+  .select(`
+    nombre,
+    telefono,
+    email
+  `)
+  .eq("id", reclamo.owner_id)
+  .single();
+
+if (errorPropietario) {
+  console.error("ERROR PROPIETARIO:", errorPropietario);
+}
+
+return {
+  ...reclamo,
+  reservas: reservasConPublicacion,
+  propietario: propietario || null,
+};
+  })
+);
+
+console.log(
+  "PRUEBA RECLAMO:",
+  JSON.stringify(reclamosCompletos, null, 2)
+);
 
 setReclamos(reclamosCompletos);
 
@@ -429,7 +304,7 @@ console.log("Estado historial reclamos:", historialReclamos);
           marginBottom: "10px",
         }}
       >
-        Pagos y Garantías
+        Garantías y cancelaciones
       </h1>
 
       <p
@@ -441,13 +316,13 @@ console.log("Estado historial reclamos:", historialReclamos);
         Administrá pagos, fondos de resguardo y transferencias.
       </p>
 
-<PagosResumen operaciones={operaciones} />
 
-<PagosFilters />
 
-<PagosTable operaciones={operaciones} />
 
-<PagosHistorialTable operaciones={historial} />
+
+
+
+
 
 <CancelacionesTable
   cancelaciones={cancelaciones}
@@ -462,7 +337,28 @@ console.log("Estado historial reclamos:", historialReclamos);
   historialCancelaciones={historialCancelaciones}
 />
 
-<ReclamosTable reclamos={reclamos} />
+<ReclamosTable
+  reclamos={reclamos}
+  onReclamoActualizado={(id) => {
+  const reclamoActualizado = reclamos.find(
+    (reclamo) => reclamo.id === id
+  );
+
+  if (reclamoActualizado) {
+    setHistorialReclamos((prev) => [
+      {
+        ...reclamoActualizado,
+        status: reclamoActualizado.status,
+      },
+      ...prev,
+    ]);
+  }
+
+  setReclamos((prev) =>
+    prev.filter((reclamo) => reclamo.id !== id)
+  );
+}}
+/>
 
 <ReclamosHistorialTable reclamos={historialReclamos} />
     </div>

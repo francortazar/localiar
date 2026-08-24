@@ -43,7 +43,7 @@ export default function AdminPage() {
       >
         <AdminCard
           icon="💳"
-          title="Pagos y Garantías"
+          title="Garantías y cancelaciones"
           description="Administrar pagos, depósitos de garantía y liberaciones."
           href="/admin/pagos"
         />

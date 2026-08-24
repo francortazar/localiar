@@ -36,56 +36,72 @@ export default function PerfilPage() {
 
   if (!user) return;
 
-  const { data, error } = await supabase
+  // Pagos de alquiler
+  const { data: pagos } = await supabase
     .from("reservation_payments")
     .select(`
       id,
-      reservation_id,
-      publication_id,
       amount,
-      owner_payment_status,
       owner_paid_at,
-      created_at,
-
       publications (
         titulo,
         resguardo
-      ),
-
-      reservations (
-        operacion_id
       )
     `)
     .eq("owner_id", user.id)
-    .eq("owner_payment_status", "pagado")
-    .order("owner_paid_at", { ascending: false });
+    .eq("owner_payment_status", "pagado");
 
-  if (error) {
-    console.error("ERROR CARGANDO MOVIMIENTOS:", error);
-    return;
-  }
+    console.log("PAGOS DE PROPIETARIO:", pagos);
 
-  const movimientos = (data || []).map((pago: any) => {
+  const ingresosAlquiler = (pagos || []).map((pago: any) => {
     const totalCobrado = Number(pago.amount || 0);
+    const resguardo = Number(pago.publications?.resguardo || 0);
 
-    const resguardo = Number(
-      pago.publications?.resguardo || 0
-    );
-
-    const alquilerConComision =
-      totalCobrado - resguardo;
-
-    const alquilerBase =
-      alquilerConComision / 1.075;
-
-    const importePropietario =
-      alquilerBase * 0.925;
+    const alquilerBase = (totalCobrado - resguardo) / 1.075;
 
     return {
-      ...pago,
-      importePropietario,
+      id: pago.id,
+      tipo: "alquiler",
+      titulo: pago.publications?.titulo,
+      fecha: pago.owner_paid_at,
+      importe: alquilerBase * 0.925,
     };
   });
+
+  // Pagos de resguardo
+  const { data: reclamos } = await supabase
+    .from("owner_claims")
+    .select(`
+      id,
+      paid_at,
+      reservations (
+        publications (
+          titulo,
+          resguardo
+        )
+      )
+    `)
+    .eq("owner_id", user.id)
+    .eq("status", "approved")
+    .not("paid_at", "is", null);
+
+  const ingresosResguardo = (reclamos || []).map((r: any) => ({
+  id: `claim-${r.id}`,
+  tipo: "resguardo",
+  titulo: r.reservations?.[0]?.publications?.titulo,
+  fecha: r.paid_at,
+  importe: Number(
+    r.reservations?.[0]?.publications?.resguardo || 0
+  ),
+}));
+
+  const movimientos = [
+    ...ingresosAlquiler,
+    ...ingresosResguardo,
+  ].sort(
+    (a, b) =>
+      new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+  );
 
   setMovimientosIngresos(movimientos);
 }
@@ -102,7 +118,7 @@ export default function PerfilPage() {
 
   // NO bloquear render
 
-  useEffect(() => {
+useEffect(() => {
   cargarUsuario();
   cargarMisReservas();
   cargarMisPublicaciones();
@@ -110,6 +126,12 @@ export default function PerfilPage() {
   cargarHistorialPublicaciones();
   cargarNotificaciones();
   cargarMovimientosIngresos();
+
+  const intervalo = setInterval(() => {
+    cargarHistorialPublicaciones();
+  }, 5000);
+
+  return () => clearInterval(intervalo);
 }, []);
 
 async function cargarFavoritos() {
@@ -651,10 +673,20 @@ const { data: actions } = await supabase
   .select("operacion_id, action")
   .eq("owner_id", user.id);
 
-  const { data: claims } = await supabase
+const { data: claims } = await supabase
   .from("owner_claims")
-  .select("operacion_id")
+  .select("operacion_id, status")
   .eq("owner_id", user.id);
+
+console.log("CLAIMS DEL PROPIETARIO:", claims);
+
+const claimsPendientesSet = new Set(
+  (claims || [])
+    .filter((c: any) => c.status === "pending")
+    .map((c: any) => String(c.operacion_id))
+);
+
+
 
   const actionsSet = new Set(
   (actions || []).map((a: any) => String(a.operacion_id))
@@ -684,12 +716,23 @@ const fechaFinalizacion =
     ? reservas[0].fecha
     : null;
 
-    return {
+const reclamoRealizado = claimsSet.has(
+  String(r.operacion_id)
+);
+
+console.log("ESTADO RECLAMO:", {
+  operacion_id: r.operacion_id,
+  claims,
+  reclamoRealizado,
+});
+
+return {
   ...r,
   nombreInquilino: perfil?.nombre,
   fechaFinalizacion,
   todoOk: actionsSet.has(r.operacion_id) === true,
-pendiente: claimsSet.has(r.operacion_id) === true,
+  pendiente: claimsPendientesSet.has(String(r.operacion_id)),
+  reclamoRealizado,
 };
   })
 );
@@ -1951,7 +1994,7 @@ cargarMisReservas();
   </p>
 )}
 
-        {!r.todoOk && !r.pendiente && (
+        {!r.todoOk && !r.pendiente && !r.reclamoRealizado && (
           <div
             style={{
               display: "flex",
@@ -2377,7 +2420,7 @@ cargarMisReservas();
               (total, movimiento) =>
                 total +
                 Number(
-                  movimiento.importePropietario || 0
+                  movimiento.importe || 0
                 ),
               0
             )
@@ -2388,8 +2431,12 @@ cargarMisReservas();
       </div>
 
       {movimientosIngresos.map((movimiento) => (
+        
+        
         <div
           key={movimiento.id}
+
+          
           style={{
             borderBottom:
               "1px solid rgba(255,255,255,0.1)",
@@ -2397,6 +2444,8 @@ cargarMisReservas();
             marginBottom: "15px",
           }}
         >
+
+         
           <div
             style={{
               display: "flex",
@@ -2405,31 +2454,44 @@ cargarMisReservas();
             }}
           >
             <div>
-              <div
-                style={{
-                  color: "#FFFFFF",
-                  fontWeight: "bold",
-                }}
-              >
-                {movimiento.publications?.titulo ||
-                  "Reserva"}
-              </div>
+  <div
+  style={{
+    color: "#FFFFFF",
+    fontWeight: "bold",
+  }}
+>
+  {movimiento.tipo === "resguardo"
+    ? "🛡️ " + (movimiento.titulo || "Reserva")
+    : "🏠 " + (movimiento.titulo || "Reserva")}
+</div>
 
-              {movimiento.owner_paid_at && (
-                <div
-                  style={{
-                    color: "#888",
-                    fontSize: "13px",
-                    marginTop: "5px",
-                  }}
-                >
-                  📅{" "}
-                  {new Date(
-                    movimiento.owner_paid_at
-                  ).toLocaleDateString("es-AR")}
-                </div>
-              )}
-            </div>
+<div
+  style={{
+    color: "#AAAAAA",
+    fontSize: "13px",
+    marginTop: "4px",
+  }}
+>
+  {movimiento.tipo === "resguardo"
+    ? "Pago de resguardo"
+    : "Pago de alquiler"}
+</div>
+
+  {movimiento.fecha && (
+    <div
+      style={{
+        color: "#999",
+        fontSize: "13px",
+        marginTop: "6px",
+      }}
+    >
+      📅 Pago realizado:{" "}
+      {new Date(
+        movimiento.fecha
+      ).toLocaleDateString("es-AR")}
+    </div>
+  )}
+</div>
 
             <div
               style={{
@@ -2440,7 +2502,7 @@ cargarMisReservas();
             >
               + $
               {Number(
-                movimiento.importePropietario || 0
+                movimiento.importe || 0
               ).toLocaleString("es-AR", {
                 maximumFractionDigits: 0,
               })}
