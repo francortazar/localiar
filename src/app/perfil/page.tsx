@@ -127,11 +127,7 @@ useEffect(() => {
   cargarNotificaciones();
   cargarMovimientosIngresos();
 
-  const intervalo = setInterval(() => {
-    cargarHistorialPublicaciones();
-  }, 5000);
 
-  return () => clearInterval(intervalo);
 }, []);
 
 async function cargarFavoritos() {
