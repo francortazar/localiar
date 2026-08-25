@@ -1255,25 +1255,27 @@ const fechaCobro = fechaPago.toLocaleDateString("es-AR");
           📅 {dia}/{mes}/{anio}
         </span>
 
-        <button
-          onClick={() =>
-            cancelarReservaComoAnfitrion(
-              r.operacion_id,
-              fecha
-            )
-          }
-          style={{
-            background: "#8B0000",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            padding: "4px 10px",
-            cursor: "pointer",
-            fontSize: "12px",
-          }}
-        >
-          Cancelar fecha
-        </button>
+        {!yaPaso && (
+  <button
+    onClick={() =>
+      cancelarReservaComoAnfitrion(
+        r.operacion_id,
+        fecha
+      )
+    }
+    style={{
+      background: "#8B0000",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      padding: "4px 10px",
+      cursor: "pointer",
+      fontSize: "12px",
+    }}
+  >
+    Cancelar fecha
+  </button>
+)}
       </div>
     );
   })}
