@@ -11,6 +11,23 @@ export default function CancelacionesTable({
 }) {
 
  async function marcarComoPagado(id: string) {
+
+  const confirmar = window.confirm(
+  "¿Estás seguro de que querés marcar esta devolución como pagada?"
+);
+
+if (!confirmar) {
+  return;
+}
+  const cancelacion = cancelaciones.find(
+    (c) => c.id === id
+  );
+
+  if (!cancelacion) {
+    alert("No se encontró la cancelación.");
+    return;
+  }
+
   const { error } = await supabase
     .from("reservation_cancellations")
     .update({
@@ -22,6 +39,50 @@ export default function CancelacionesTable({
   if (error) {
     alert(error.message);
     return;
+  }
+
+  const emailInquilino = cancelacion.inquilino?.email;
+
+  if (!emailInquilino) {
+    alert(
+      "El pago fue marcado, pero no se encontró el email del inquilino."
+    );
+    onPagoRealizado(id);
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "/api/enviar-email-devolucion-cancelacion",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cancelacionId: id,
+          emailInquilino: emailInquilino,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const data = await response.json();
+
+      throw new Error(
+        data?.error ||
+          "No se pudo enviar el email al inquilino."
+      );
+    }
+  } catch (error: any) {
+    console.error(
+      "Error enviando email de devolución:",
+      error
+    );
+
+    alert(
+      "El pago fue marcado correctamente, pero no se pudo enviar el email al inquilino."
+    );
   }
 
   onPagoRealizado(id);
@@ -74,6 +135,14 @@ export default function CancelacionesTable({
   Motivo
 </th>
 
+<th style={{ textAlign: "left", padding: "10px" }}>
+  Mail
+</th>
+
+<th style={{ textAlign: "left", padding: "10px" }}>
+  Teléfono
+</th>
+
 <th style={{ textAlign: "right", padding: "10px" }}>
   Devolución alquiler
 </th>
@@ -85,6 +154,25 @@ export default function CancelacionesTable({
 <th style={{ textAlign: "right", padding: "10px" }}>
   Monto a devolver
 </th>
+
+<th
+  style={{
+    textAlign: "left",
+    padding: "10px",
+  }}
+>
+  Fecha/s cancelada/s
+</th>
+
+<th
+  style={{
+    textAlign: "left",
+    padding: "10px",
+  }}
+>
+  Fecha de cancelación
+</th>
+
 <th
   style={{
     textAlign: "center",
@@ -172,6 +260,24 @@ export default function CancelacionesTable({
   })()}
 </td>
 
+<td
+  style={{
+    padding: "10px",
+    borderRight: "1px solid #333",
+  }}
+>
+  {c.inquilino?.email || "-"}
+</td>
+
+<td
+  style={{
+    padding: "10px",
+    borderRight: "1px solid #333",
+  }}
+>
+  {c.inquilino?.telefono || "-"}
+</td>
+
             <td
   style={{
     padding: "10px",
@@ -239,6 +345,43 @@ export default function CancelacionesTable({
       maximumFractionDigits: 2,
     })}`;
   })()}
+</td>
+
+<td
+  style={{
+    padding: "10px",
+  }}
+>
+  {(c.fechas || []).map((fecha: string, index: number) => {
+    const partes = fecha.split("-");
+
+    const fechaFormateada =
+      partes.length === 3
+        ? `${partes[2]}/${partes[1]}/${partes[0]}`
+        : fecha;
+
+    return (
+      <div key={index}>
+        {fechaFormateada}
+      </div>
+    );
+  })}
+</td>
+
+<td
+  style={{
+    padding: "10px",
+  }}
+>
+  {c.created_at
+    ? new Date(c.created_at).toLocaleString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-"}
 </td>
 
 <td

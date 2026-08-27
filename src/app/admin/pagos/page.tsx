@@ -41,8 +41,10 @@ const {
       nombre
     ),
     inquilino:profiles!reservation_cancellations_inquilino_fkey (
-      nombre
-    )
+  nombre,
+  email,
+  telefono
+)
   `)
   .eq("estado", "pendiente")
 .eq("estado_pago", "pendiente")
@@ -76,14 +78,16 @@ const {
       nombre
     ),
     inquilino:profiles!reservation_cancellations_inquilino_fkey (
-      nombre
-    )
+  nombre,
+  email,
+  telefono
+)
   `)
   .eq("estado", "pendiente")
   .eq("estado_pago", "pagado")
-  .order("fecha_cancelacion", {
-    ascending: false,
-  });
+  .order("fecha_pago", {
+  ascending: false,
+});
 
 
 if (errorHistorialCancelaciones) {
@@ -327,6 +331,27 @@ console.log("Estado historial reclamos:", historialReclamos);
 <CancelacionesTable
   cancelaciones={cancelaciones}
   onPagoRealizado={(id) => {
+    const cancelacionPagada = cancelaciones.find(
+      (c) => c.id === id
+    );
+
+    if (cancelacionPagada) {
+      setHistorialCancelaciones((prev) =>
+        [
+          {
+            ...cancelacionPagada,
+            estado_pago: "pagado",
+            fecha_pago: new Date().toISOString(),
+          },
+          ...prev,
+        ].sort(
+          (a, b) =>
+            new Date(b.fecha_pago).getTime() -
+            new Date(a.fecha_pago).getTime()
+        )
+      );
+    }
+
     setCancelaciones((prev) =>
       prev.filter((c) => c.id !== id)
     );

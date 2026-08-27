@@ -23,8 +23,10 @@ export async function enviarEmailsCancelacion(
         email
       )
     `)
-    .eq("operacion_id", operacionId)
-    .single();
+        .eq("operacion_id", operacionId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (error) {
     console.error(error);
