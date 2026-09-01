@@ -592,7 +592,7 @@ setFilters({
     alt=""
     style={{
       width: "100%",
-      height: "140px",
+      height: "200px",
       objectFit: "cover",
     }}
   />

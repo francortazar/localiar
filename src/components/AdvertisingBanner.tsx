@@ -95,16 +95,15 @@ console.log("FILTROS QUE LLEGAN AL BANNER:", filters);
   target="_blank"
   rel="noopener noreferrer"
 >
-  <img
-    src={campaña.banner_url}
-    alt={campaña.campaign_name}
-    style={{
-      width: "100%",
-      height: `${altoBanner}px`,
-      objectFit: "cover",
-      display: "block",
-    }}
-  />
+<img
+  src={campaña.banner_url}
+  alt={campaña.campaign_name}
+  style={{
+    width: "100%",
+    height: "auto",
+    display: "block",
+  }}
+/>
 </a>
   </div>
 );
