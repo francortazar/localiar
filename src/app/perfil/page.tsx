@@ -2538,21 +2538,47 @@ cargarMisReservas();
 
 
 
-      <button
-  onClick={cerrarSesion}
+      <div
   style={{
+    display: "flex",
+    gap: "12px",
     marginTop: "20px",
-    background: "#FF7A00",
-    color: "white",
-    border: "none",
-    borderRadius: "16px",
-    padding: "18px",
-    fontWeight: "bold",
-    cursor: "pointer",
+    alignItems: "center",
+    flexWrap: "wrap",
   }}
 >
-  Cerrar sesión
-</button>
+  <button
+    onClick={cerrarSesion}
+    style={{
+      background: "#FF7A00",
+      color: "white",
+      border: "none",
+      borderRadius: "16px",
+      padding: "18px",
+      fontWeight: "bold",
+      cursor: "pointer",
+    }}
+  >
+    Cerrar sesión
+  </button>
+
+  <button
+    onClick={() => {
+      window.location.href = "/contacto";
+    }}
+    style={{
+      background: "#333",
+      color: "white",
+      border: "none",
+      borderRadius: "16px",
+      padding: "18px",
+      fontWeight: "bold",
+      cursor: "pointer",
+    }}
+  >
+    Contacto
+  </button>
+</div>
 
       <footer
         style={{

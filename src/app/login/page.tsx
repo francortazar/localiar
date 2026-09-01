@@ -9,6 +9,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+
+  async function recuperarContraseña() {
+    if (!email) {
+      alert("Ingresá tu email para recuperar la contraseña.");
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email,
+      {
+        redirectTo: `${window.location.origin}/actualizar-contrasena`,
+      }
+    );
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    alert(
+      "Te enviamos un correo para recuperar tu contraseña."
+    );
+  }
+
   async function ingresar() {
     const { error } =
       await supabase.auth.signInWithPassword({
@@ -69,6 +93,21 @@ router.push("/");
           }
           style={inputStyle}
         />
+
+                <button
+          onClick={recuperarContraseña}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#FF7A00",
+            cursor: "pointer",
+            textAlign: "right",
+            padding: "0",
+            fontSize: "14px",
+          }}
+        >
+          ¿Olvidaste tu contraseña?
+        </button>
 
         <button
           onClick={ingresar}

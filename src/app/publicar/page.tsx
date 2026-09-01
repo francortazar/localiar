@@ -332,16 +332,36 @@ const [usuario, setUsuario] = useState<any>(null);
         paddingBottom: "120px",
       }}
     >
-      <h1
-        style={{
-          color: "#FF7A00",
-          fontSize: "28px",
-          fontWeight: "bold",
-          marginBottom: "25px",
-        }}
-      >
-        Crear publicación
-      </h1>
+      <div
+  style={{
+    display: "flex",
+    alignItems: "baseline",
+    gap: "12px",
+    flexWrap: "wrap",
+    marginBottom: "25px",
+  }}
+>
+  <h1
+    style={{
+      color: "#FF7A00",
+      fontSize: "28px",
+      fontWeight: "bold",
+      margin: 0,
+    }}
+  >
+    Crear publicación
+  </h1>
+
+  <span
+    style={{
+      color: "#AAAAAA",
+      fontSize: "15px",
+      fontWeight: "normal",
+    }}
+  >
+    Nunca perdés el control de tu local, podés cancelar cuando quieras
+  </span>
+</div>
 
       <div
         style={{
@@ -1036,7 +1056,7 @@ const seleccionado =
             espacio publicado.
           </p>
         </div>
-        
+
       </div>
       <footer
   style={{

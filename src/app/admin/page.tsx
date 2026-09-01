@@ -117,6 +117,13 @@ export default function AdminPage() {
   description="Administrar campañas publicitarias."
   href="/admin/publicidad"
 />
+
+<AdminCard
+  icon="🔔"
+  title="Notificaciones"
+  description="Solicitudes y avisos pendientes de atención."
+  href="/admin/notificaciones"
+/>
       </div>
     </>
   );

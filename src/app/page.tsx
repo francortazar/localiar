@@ -184,15 +184,37 @@ for (
             marginBottom: "10px",
           }}
         >
-          <h1
-            style={{
-              color: "#FF7A00",
-              fontSize: "24px",
-              fontWeight: "bold",
-            }}
-          >
-            LOCALIAR
-          </h1>
+          <div
+  style={{
+    display: "flex",
+    alignItems: "baseline",
+    gap: "10px",
+    flexWrap: "wrap",
+  }}
+>
+  <h1
+    style={{
+      color: "#FF7A00",
+      fontSize: "24px",
+      fontWeight: "bold",
+      margin: 0,
+    }}
+  >
+    LOCALIAR
+  </h1>
+
+  <span
+    style={{
+      color: "#FFFFFF",
+      fontSize: "14px",
+      fontWeight: "300",
+      fontStyle: "italic",
+      letterSpacing: "0.3px",
+    }}
+  >
+    alquiler temporal de espacios comerciales
+  </span>
+</div>
 
           <button
             style={{

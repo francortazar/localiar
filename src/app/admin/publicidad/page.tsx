@@ -38,7 +38,7 @@ export default function PublicidadPage() {
           color: "#999",
         }}
       >
-        Administración de campañas publicitarias.
+        Administración de campañas publicitarias. 1200 × 480 px tamaño del banner
       </p>
 
       <CreateCampaignForm />
